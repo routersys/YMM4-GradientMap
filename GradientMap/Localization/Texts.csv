@@ -1,0 +1,17 @@
+﻿Key,Parameter,ja-jp,en-us,zh-cn,zh-tw,ko-kr,es-es,ar-sa,id-id
+EffectName,,グラデーションマップ,Gradient Map,渐变映射,漸層對應,그라디언트 맵,Mapa de degradado,خريطة التدرج,Peta Gradien
+GroupName,,グラデーションマップ,Gradient Map,渐变映射,漸層對應,그라디언트 맵,Mapa de degradado,خريطة التدرج,Peta Gradien
+GradientFilePathName,,グラデーションファイル,Gradient File,渐变文件,漸層檔案,그라디언트 파일,Archivo de degradado,ملف التدرج,File Gradien
+GradientFilePathDesc,,グラデーションマップ画像ファイルのパス,Path to the gradient map image file,渐变映射图像文件路径,漸層對應影像檔案路徑,그라디언트 맵 이미지 파일 경로,Ruta al archivo de imagen del mapa de degradado,مسار ملف صورة خريطة التدرج,Jalur file gambar peta gradien
+OpacityName,,不透明度,Opacity,不透明度,不透明度,불투명도,Opacidad,التعتيم,Opasitas
+OpacityDesc,,グラデーションマップの適用強度,Gradient map application strength,渐变映射应用强度,漸層對應套用強度,그라디언트 맵 적용 강도,Intensidad de aplicación del mapa de degradado,قوة تطبيق خريطة التدرج,Kekuatan penerapan peta gradien
+BlendModeName,,合成モード,Blend Mode,混合模式,混合模式,블렌드 모드,Modo de fusión,وضع المزج,Mode Blend
+BlendModeDesc,,グラデーションマップの合成モード,Gradient map blend mode,渐变映射混合模式,漸層對應混合模式,그라디언트 맵 블렌드 모드,Modo de fusión del mapa de degradado,وضع مزج خريطة التدرج,Mode blend peta gradien
+IsHorizontalName,,水平サンプリング,Horizontal Sampling,水平采样,水平採樣,수평 샘플링,Muestreo horizontal,أخذ العينات الأفقي,Sampling Horizontal
+IsHorizontalDesc,,オンのとき水平方向にグラデーション画像をサンプリングします,When enabled samples the gradient image horizontally,启用时水平采样渐变图像,啟用時水平採樣漸層影像,활성화 시 수평 방향으로 그라디언트 이미지를 샘플링합니다,Cuando está activado muestrea la imagen de degradado horizontalmente,عند التفعيل يأخذ عينات أفقياً من صورة التدرج,Saat diaktifkan mengambil sampel gambar gradien secara horizontal
+BlendModeNormalName,,通常,Normal,正常,正常,보통,Normal,عادي,Normal
+BlendModeNormalDesc,,グラデーションマップの色をそのまま適用します,Applies gradient map colours directly,直接应用渐变映射颜色,直接套用漸層對應顏色,그라디언트 맵 색상을 직접 적용합니다,Aplica los colores del mapa de degradado directamente,يطبق ألوان خريطة التدرج مباشرة,Menerapkan warna peta gradien secara langsung
+BlendModeLuminosityName,,輝度,Luminosity,亮度,亮度,밝기,Luminosidad,السطوع,Luminositas
+BlendModeLuminosityDesc,,元の色相と彩度を維持しグラデーションの輝度を適用します,Applies gradient luminosity while preserving original hue and saturation,保留原始色调和饱和度并应用渐变亮度,保留原始色相和飽和度並套用漸層亮度,원본 색조와 채도를 유지하면서 그라디언트 밝기를 적용합니다,Aplica la luminosidad del degradado manteniendo el tono y la saturación originales,يطبق سطوع التدرج مع الحفاظ على الصبغة والتشبع الأصليين,Menerapkan luminositas gradien sambil mempertahankan hue dan saturasi asli
+BlendModeHueName,,色相,Hue,色调,色相,색조,Tono,الصبغة,Hue
+BlendModeHueDesc,,グラデーションの色相方向に元の輝度を適用します,Applies original luminosity along the gradient hue direction,沿渐变色调方向应用原始亮度,沿漸層色相方向套用原始亮度,그라디언트 색조 방향으로 원본 밝기를 적용합니다,Aplica la luminosidad original en la dirección del tono del degradado,يطبق السطوع الأصلي في اتجاه صبغة التدرج,Menerapkan luminositas asli sepanjang arah hue gradien

@@ -1,0 +1,17 @@
+﻿using GradientMap.Core;
+using GradientMap.Interfaces;
+
+namespace GradientMap.Services;
+
+internal static class GradientMapServices
+{
+    internal static readonly IServiceRegistry Container = BuildContainer();
+
+    private static IServiceRegistry BuildContainer()
+    {
+        var registry = new ServiceRegistry();
+        registry.RegisterSingleton<IGradientTextureFactory>(new GradientTextureFactory());
+        registry.RegisterFactory<IResourceRegistry>(() => new ResourceRegistry());
+        return registry;
+    }
+}
