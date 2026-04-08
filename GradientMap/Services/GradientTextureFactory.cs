@@ -12,17 +12,36 @@ namespace GradientMap.Services;
 
 public sealed class GradientTextureFactory : IGradientTextureFactory
 {
+    private readonly Dictionary<string, WeakReference<ID2D1Bitmap>> _cache = new(StringComparer.OrdinalIgnoreCase);
+
     public ID2D1Bitmap? CreateGradientBitmap(ID2D1DeviceContext deviceContext, string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             return null;
 
+        lock (_cache)
+        {
+            if (_cache.TryGetValue(filePath, out var weakRef) &&
+                weakRef.TryGetTarget(out var cached))
+                return cached;
+        }
+
         try
         {
-            return string.Equals(
+            var bitmap = string.Equals(
                 Path.GetExtension(filePath), ".grd", StringComparison.OrdinalIgnoreCase)
                 ? CreateFromGrd(deviceContext, filePath)
                 : CreateFromImage(deviceContext, filePath);
+
+            if (bitmap is not null)
+            {
+                lock (_cache)
+                {
+                    _cache[filePath] = new WeakReference<ID2D1Bitmap>(bitmap);
+                }
+            }
+
+            return bitmap;
         }
         catch
         {

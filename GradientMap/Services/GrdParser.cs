@@ -16,15 +16,23 @@ internal static class GrdParser
         if (sig != "8BGR") return null;
 
         var version = ReadU16(reader);
+
+        return version >= 5
+            ? ParseVersion5(reader)
+            : ParseLegacy(reader, version);
+    }
+
+    private static byte[]? ParseLegacy(BinaryReader reader, ushort version)
+    {
         var count = ReadU16(reader);
         if (count == 0) return null;
 
-        return ReadFirstSolidGradientPixels(reader, version);
+        return ReadFirstSolidGradientPixelsLegacy(reader, version);
     }
 
-    private static byte[]? ReadFirstSolidGradientPixels(BinaryReader reader, ushort version)
+    private static byte[]? ReadFirstSolidGradientPixelsLegacy(BinaryReader reader, ushort version)
     {
-        SkipName(reader, version);
+        SkipNameLegacy(reader, version);
 
         var gradType = ReadU16(reader);
         if (gradType != 0) return null;
@@ -59,7 +67,232 @@ internal static class GrdParser
         return SampleToPixels(colorStops, transStops);
     }
 
-    private static void SkipName(BinaryReader reader, ushort version)
+    private static byte[]? ParseVersion5(BinaryReader reader)
+    {
+        reader.BaseStream.Seek(4, SeekOrigin.Current);
+
+        var descriptor = DescriptorReader.ReadDescriptor(reader);
+        if (descriptor is null) return null;
+
+        var gradientObj = ResolveGradientDescriptor(descriptor);
+        if (gradientObj is null) return null;
+
+        var colorStops = ExtractColorStops(gradientObj);
+        var transStops = ExtractTransparencyStops(gradientObj);
+
+        if (colorStops is null || colorStops.Length == 0) return null;
+
+        return SampleToPixels(
+            colorStops,
+            transStops ?? [(0f, 0.5f, 1f), (1f, 0.5f, 1f)]);
+    }
+
+    private static Dictionary<string, object?>? ResolveGradientDescriptor(
+        Dictionary<string, object?> root)
+    {
+        if (!root.TryGetValue("GrdL", out var grdlObj) ||
+            grdlObj is not List<object?> grdList ||
+            grdList.Count == 0)
+            return null;
+
+        if (grdList[0] is not Dictionary<string, object?> firstGrad)
+            return null;
+
+        if (firstGrad.TryGetValue("Grad", out var gradObj) &&
+            gradObj is Dictionary<string, object?> gradDesc &&
+            gradDesc.ContainsKey("Clrs"))
+            return gradDesc;
+
+        if (firstGrad.ContainsKey("Clrs"))
+            return firstGrad;
+
+        return null;
+    }
+
+    private static (float Location, float Midpoint, byte R, byte G, byte B)[]? ExtractColorStops(
+        Dictionary<string, object?> gradient)
+    {
+        if (!gradient.TryGetValue("Clrs", out var clrsObj) ||
+            clrsObj is not List<object?> clrsList)
+            return null;
+
+        var stops = new (float, float, byte, byte, byte)[clrsList.Count];
+        for (var i = 0; i < clrsList.Count; i++)
+        {
+            if (clrsList[i] is not Dictionary<string, object?> stop) return null;
+
+            var location = stop.TryGetValue("Lctn", out var lctn) && lctn is int loc
+                ? loc / 4096f : 0f;
+            var midpoint = stop.TryGetValue("Mdpn", out var mdpn) && mdpn is int mid
+                ? mid / 100f : 0.5f;
+
+            var (r, g, b) = ExtractColorFromStop(stop);
+            stops[i] = (location, midpoint, r, g, b);
+        }
+
+        return stops;
+    }
+
+    private static (byte R, byte G, byte B) ExtractColorFromStop(Dictionary<string, object?> stop)
+    {
+        if (!stop.TryGetValue("Clr ", out var clrObj) ||
+            clrObj is not Dictionary<string, object?> clr)
+            return (0, 0, 0);
+
+        if (!clr.TryGetValue("_class", out var classObj) || classObj is not string classId)
+            return (0, 0, 0);
+
+        return classId switch
+        {
+            "RGBC" => ExtractRgbc(clr),
+            "HSBC" => ExtractHsbc(clr),
+            "CMYC" => ExtractCmyc(clr),
+            "LbCl" => ExtractLabc(clr),
+            "Grsc" => ExtractGrsc(clr),
+            _ => (0, 0, 0)
+        };
+    }
+
+    private static (byte R, byte G, byte B) ExtractRgbc(Dictionary<string, object?> clr)
+    {
+        var rd = GetDouble(clr, "Rd  ");
+        var gn = GetDouble(clr, "Grn ");
+        var bl = GetDouble(clr, "Bl  ");
+        return (
+            (byte)Math.Clamp(Math.Round(rd), 0, 255),
+            (byte)Math.Clamp(Math.Round(gn), 0, 255),
+            (byte)Math.Clamp(Math.Round(bl), 0, 255));
+    }
+
+    private static (byte R, byte G, byte B) ExtractHsbc(Dictionary<string, object?> clr)
+    {
+        var h = GetDouble(clr, "H   ") / 360.0;
+        var s = GetDouble(clr, "Strt") / 100.0;
+        var bv = GetDouble(clr, "Brgh") / 100.0;
+        return HsbToRgbF(h, s, bv);
+    }
+
+    private static (byte R, byte G, byte B) ExtractCmyc(Dictionary<string, object?> clr)
+    {
+        var c = GetDouble(clr, "Cyn ") / 100.0;
+        var m = GetDouble(clr, "Mgnt") / 100.0;
+        var y = GetDouble(clr, "Ylw ") / 100.0;
+        var k = GetDouble(clr, "Blck") / 100.0;
+        return (
+            (byte)((1.0 - c) * (1.0 - k) * 255.0),
+            (byte)((1.0 - m) * (1.0 - k) * 255.0),
+            (byte)((1.0 - y) * (1.0 - k) * 255.0));
+    }
+
+    private static (byte R, byte G, byte B) ExtractLabc(Dictionary<string, object?> clr)
+    {
+        var l = GetDouble(clr, "Lmnc");
+        var a = GetDouble(clr, "A   ");
+        var bv = GetDouble(clr, "B   ");
+        return LabToRgbF(l, a, bv);
+    }
+
+    private static (byte R, byte G, byte B) ExtractGrsc(Dictionary<string, object?> clr)
+    {
+        var gray = GetDouble(clr, "Gry ");
+        var v = (byte)Math.Clamp(Math.Round(gray / 100.0 * 255.0), 0, 255);
+        return (v, v, v);
+    }
+
+    private static double GetDouble(Dictionary<string, object?> dict, string key)
+    {
+        if (dict.TryGetValue(key, out var val))
+        {
+            if (val is double d) return d;
+            if (val is (string _, double dv)) return dv;
+        }
+        return 0.0;
+    }
+
+    private static (float Location, float Midpoint, float Opacity)[]? ExtractTransparencyStops(
+        Dictionary<string, object?> gradient)
+    {
+        if (!gradient.TryGetValue("Trns", out var trnsObj) ||
+            trnsObj is not List<object?> trnsList)
+            return null;
+
+        var stops = new (float, float, float)[trnsList.Count];
+        for (var i = 0; i < trnsList.Count; i++)
+        {
+            if (trnsList[i] is not Dictionary<string, object?> stop) continue;
+
+            var location = stop.TryGetValue("Lctn", out var lctn) && lctn is int loc
+                ? loc / 4096f : 0f;
+            var midpoint = stop.TryGetValue("Mdpn", out var mdpn) && mdpn is int mid
+                ? mid / 100f : 0.5f;
+            var opacity = 1f;
+            if (stop.TryGetValue("Opct", out var opctObj))
+            {
+                if (opctObj is (string _, double dv))
+                    opacity = (float)(dv / 100.0);
+                else if (opctObj is double dv2)
+                    opacity = (float)(dv2 / 100.0);
+            }
+            stops[i] = (location, midpoint, opacity);
+        }
+
+        return stops;
+    }
+
+    private static (byte R, byte G, byte B) HsbToRgbF(double h, double s, double b)
+    {
+        if (s < 1e-6)
+        {
+            var v = (byte)(b * 255.0);
+            return (v, v, v);
+        }
+
+        var hf = h * 6.0;
+        var sector = (int)hf % 6;
+        var f = hf - Math.Floor(hf);
+        var p = b * (1.0 - s);
+        var q = b * (1.0 - f * s);
+        var tv = b * (1.0 - (1.0 - f) * s);
+
+        var (r, g, bv) = sector switch
+        {
+            0 => (b, tv, p),
+            1 => (q, b, p),
+            2 => (p, b, tv),
+            3 => (p, q, b),
+            4 => (tv, p, b),
+            _ => (b, p, q)
+        };
+
+        return ((byte)(r * 255.0), (byte)(g * 255.0), (byte)(bv * 255.0));
+    }
+
+    private static (byte R, byte G, byte B) LabToRgbF(double l, double a, double b)
+    {
+        var fy = (l + 16.0) / 116.0;
+        var fx = a / 500.0 + fy;
+        var fz = fy - b / 200.0;
+
+        static double F(double t) => t > 0.206897 ? t * t * t : (t - 16.0 / 116.0) / 7.787;
+
+        var x = 0.95047 * F(fx);
+        var y = 1.00000 * F(fy);
+        var z = 1.08883 * F(fz);
+
+        var r = x * 3.2406 + y * -1.5372 + z * -0.4986;
+        var g = x * -0.9689 + y * 1.8758 + z * 0.0415;
+        var bv = x * 0.0557 + y * -0.2040 + z * 1.0570;
+
+        static double Gamma(double v) =>
+            v > 0.0031308 ? 1.055 * Math.Pow(v, 1.0 / 2.4) - 0.055 : 12.92 * v;
+
+        return (
+            (byte)(Math.Clamp(Gamma(r), 0.0, 1.0) * 255.0),
+            (byte)(Math.Clamp(Gamma(g), 0.0, 1.0) * 255.0),
+            (byte)(Math.Clamp(Gamma(bv), 0.0, 1.0) * 255.0));
+    }
+
+    private static void SkipNameLegacy(BinaryReader reader, ushort version)
     {
         if (version >= 5)
         {
@@ -73,7 +306,7 @@ internal static class GrdParser
         }
     }
 
-    private static byte[] SampleToPixels(
+    internal static byte[] SampleToPixels(
         (float Location, float Midpoint, byte R, byte G, byte B)[] colorStops,
         (float Location, float Midpoint, float Opacity)[] transStops)
     {
