@@ -19,19 +19,33 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
 
         try
         {
-            var source = LoadBitmapSource(filePath);
-            var width = source.PixelWidth;
-            var height = source.PixelHeight;
-            var stride = width * 4;
-            var byteLen = stride * height;
+            return string.Equals(
+                Path.GetExtension(filePath), ".grd", StringComparison.OrdinalIgnoreCase)
+                ? CreateFromGrd(deviceContext, filePath)
+                : CreateFromImage(deviceContext, filePath);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
-            var buffer = ArrayPool<byte>.Shared.Rent(byteLen);
-            var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-            try
-            {
-                source.CopyPixels(buffer, stride, 0);
+    private static ID2D1Bitmap? CreateFromGrd(ID2D1DeviceContext deviceContext, string filePath)
+    {
+        var pixels = GrdParser.ParseToPixels(filePath);
+        if (pixels is null) return null;
 
-                var props = new BitmapProperties
+        const int width = GrdParser.Resolution;
+        const int stride = width * 4;
+
+        var handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
+        try
+        {
+            return deviceContext.CreateBitmap(
+                new SizeI(width, 1),
+                handle.AddrOfPinnedObject(),
+                stride,
+                new BitmapProperties
                 {
                     PixelFormat = new()
                     {
@@ -40,23 +54,46 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
                     },
                     DpiX = 96f,
                     DpiY = 96f,
-                };
-
-                return deviceContext.CreateBitmap(
-                    new SizeI(width, height),
-                    handle.AddrOfPinnedObject(),
-                    stride,
-                    props);
-            }
-            finally
-            {
-                handle.Free();
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
+                });
         }
-        catch
+        finally
         {
-            return null;
+            handle.Free();
+        }
+    }
+
+    private static ID2D1Bitmap? CreateFromImage(ID2D1DeviceContext deviceContext, string filePath)
+    {
+        var source = LoadBitmapSource(filePath);
+        var width = source.PixelWidth;
+        var height = source.PixelHeight;
+        var stride = width * 4;
+        var byteLen = stride * height;
+
+        var buffer = ArrayPool<byte>.Shared.Rent(byteLen);
+        var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+        try
+        {
+            source.CopyPixels(buffer, stride, 0);
+            return deviceContext.CreateBitmap(
+                new SizeI(width, height),
+                handle.AddrOfPinnedObject(),
+                stride,
+                new BitmapProperties
+                {
+                    PixelFormat = new()
+                    {
+                        Format = Vortice.DXGI.Format.B8G8R8A8_UNorm,
+                        AlphaMode = AlphaMode.Premultiplied,
+                    },
+                    DpiX = 96f,
+                    DpiY = 96f,
+                });
+        }
+        finally
+        {
+            handle.Free();
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 

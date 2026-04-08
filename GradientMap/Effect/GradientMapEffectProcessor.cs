@@ -25,9 +25,11 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
     private int _isHorizontal;
 
     public ID2D1Image Output =>
-        _effectOutput ?? _sourceInput
-        ?? throw new InvalidOperationException(
-            "SetInput must be called before accessing Output.");
+        _effectOutput is not null && _gradientBitmap is not null
+            ? _effectOutput
+            : _sourceInput
+              ?? throw new InvalidOperationException(
+                  "SetInput must be called before accessing Output.");
 
     public GradientMapEffectProcessor(
         IGraphicsDevicesAndContext devices,
