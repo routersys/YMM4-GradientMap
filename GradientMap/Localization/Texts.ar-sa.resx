@@ -63,6 +63,8 @@
 <data name="GroupName" xml:space="preserve"><value>خريطة التدرج</value></data>
 <data name="GradientFilePathName" xml:space="preserve"><value>ملف التدرج</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>مسار ملف صورة خريطة التدرج</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>تحديد التدرج</value></data>
+<data name="GradientIndexDesc" xml:space="preserve"><value>تحديد حسب الفهرس من تدرجات متعددة داخل الملف</value></data>
 <data name="OpacityName" xml:space="preserve"><value>التعتيم</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>قوة تطبيق خريطة التدرج</value></data>
 <data name="BlendModeName" xml:space="preserve"><value>وضع المزج</value></data>

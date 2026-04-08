@@ -63,6 +63,8 @@
 <data name="GroupName" xml:space="preserve"><value>Mapa de degradado</value></data>
 <data name="GradientFilePathName" xml:space="preserve"><value>Archivo de degradado</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>Ruta al archivo de imagen del mapa de degradado</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>Selección de degradado</value></data>
+<data name="GradientIndexDesc" xml:space="preserve"><value>Selecciona por índice entre múltiples degradados del archivo</value></data>
 <data name="OpacityName" xml:space="preserve"><value>Opacidad</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>Intensidad de aplicación del mapa de degradado</value></data>
 <data name="BlendModeName" xml:space="preserve"><value>Modo de fusión</value></data>

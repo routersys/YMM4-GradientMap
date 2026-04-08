@@ -63,6 +63,8 @@
 <data name="GroupName" xml:space="preserve"><value>Peta Gradien</value></data>
 <data name="GradientFilePathName" xml:space="preserve"><value>File Gradien</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>Jalur file gambar peta gradien</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>Pilihan Gradien</value></data>
+<data name="GradientIndexDesc" xml:space="preserve"><value>Pilih berdasarkan indeks dari beberapa gradien dalam file</value></data>
 <data name="OpacityName" xml:space="preserve"><value>Opasitas</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>Kekuatan penerapan peta gradien</value></data>
 <data name="BlendModeName" xml:space="preserve"><value>Mode Blend</value></data>

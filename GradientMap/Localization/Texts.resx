@@ -63,6 +63,8 @@
 <data name="GroupName" xml:space="preserve"><value>グラデーションマップ</value></data>
 <data name="GradientFilePathName" xml:space="preserve"><value>グラデーションファイル</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>グラデーションマップ画像ファイルのパス</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>グラデーション選択</value></data>
+<data name="GradientIndexDesc" xml:space="preserve"><value>ファイル内の複数グラデーションからインデックスで選択します</value></data>
 <data name="OpacityName" xml:space="preserve"><value>不透明度</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>グラデーションマップの適用強度</value></data>
 <data name="BlendModeName" xml:space="preserve"><value>合成モード</value></data>

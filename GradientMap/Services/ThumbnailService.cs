@@ -10,7 +10,7 @@ internal static class ThumbnailService
     private const int ThumbnailWidth = 48;
     private const int ThumbnailHeight = 16;
 
-    internal static Task<BitmapSource?> CreateThumbnailAsync(string filePath)
+    internal static Task<BitmapSource?> CreateThumbnailAsync(string filePath, int gradientIndex = 0)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             return Task.FromResult<BitmapSource?>(null);
@@ -31,9 +31,9 @@ internal static class ThumbnailService
         });
     }
 
-    private static BitmapSource? CreateGrdThumbnail(string filePath)
+    private static BitmapSource? CreateGrdThumbnail(string filePath, int gradientIndex = 0)
     {
-        var pixels = GrdParser.ParseToPixels(filePath);
+        var pixels = GrdParser.ParseToPixels(filePath, gradientIndex);
         if (pixels is null) return null;
 
         var thumbPixels = new byte[ThumbnailWidth * ThumbnailHeight * 4];

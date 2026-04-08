@@ -63,6 +63,8 @@
 <data name="GroupName" xml:space="preserve"><value>渐变映射</value></data>
 <data name="GradientFilePathName" xml:space="preserve"><value>渐变文件</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>渐变映射图像文件路径</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>渐变选择</value></data>
+<data name="GradientIndexDesc" xml:space="preserve"><value>从文件中的多个渐变中按索引选择</value></data>
 <data name="OpacityName" xml:space="preserve"><value>不透明度</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>渐变映射应用强度</value></data>
 <data name="BlendModeName" xml:space="preserve"><value>混合模式</value></data>
@@ -102,7 +104,7 @@
 <data name="BlendModeSoftLightDesc" xml:space="preserve"><value>类似叠加但对比度更柔和</value></data>
 <data name="BlendModeHardLightName" xml:space="preserve"><value>强光</value></data>
 <data name="BlendModeHardLightDesc" xml:space="preserve"><value>以渐变值为基础应用叠加效果</value></data>
-<data name="BlendModeDifferenceName" xml:space="preserve"><value>差値</value></data>
+<data name="BlendModeDifferenceName" xml:space="preserve"><value>差值</value></data>
 <data name="BlendModeDifferenceDesc" xml:space="preserve"><value>返回原色与渐变色之间的差值绝对值</value></data>
 <data name="BlendModeVividLightName" xml:space="preserve"><value>亮光</value></data>
 <data name="BlendModeVividLightDesc" xml:space="preserve"><value>根据渐变值应用颜色加深或减淡</value></data>

@@ -4,5 +4,5 @@ namespace GradientMap.Interfaces;
 
 public interface IGradientTextureFactory
 {
-    ID2D1Bitmap? CreateGradientBitmap(ID2D1DeviceContext deviceContext, string filePath);
+    ID2D1Bitmap? CreateGradientBitmap(ID2D1DeviceContext deviceContext, string filePath, int gradientIndex);
 }

@@ -63,6 +63,8 @@
 <data name="GroupName" xml:space="preserve"><value>Gradient Map</value></data>
 <data name="GradientFilePathName" xml:space="preserve"><value>Gradient File</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>Path to the gradient map image file</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>Gradient Selection</value></data>
+<data name="GradientIndexDesc" xml:space="preserve"><value>Select by index from multiple gradients within the file</value></data>
 <data name="OpacityName" xml:space="preserve"><value>Opacity</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>Gradient map application strength</value></data>
 <data name="BlendModeName" xml:space="preserve"><value>Blend Mode</value></data>

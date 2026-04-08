@@ -36,10 +36,24 @@ public sealed class GradientMapEffect : VideoEffectBase
 
     [Display(
         GroupName = nameof(Texts.GroupName),
+        Name = nameof(Texts.GradientIndexName),
+        Description = nameof(Texts.GradientIndexDesc),
+        ResourceType = typeof(Texts),
+        Order = 1)]
+    [GrdIndexSelector]
+    public int GradientIndex
+    {
+        get => _gradientIndex;
+        set => Set(ref _gradientIndex, Math.Max(0, value));
+    }
+    private int _gradientIndex;
+
+    [Display(
+        GroupName = nameof(Texts.GroupName),
         Name = nameof(Texts.OpacityName),
         Description = nameof(Texts.OpacityDesc),
         ResourceType = typeof(Texts),
-        Order = 1)]
+        Order = 2)]
     [AnimationSlider("F1", "%", 0d, 100d)]
     public Animation Opacity { get; } = new Animation(100, 0, 100);
 
@@ -48,7 +62,7 @@ public sealed class GradientMapEffect : VideoEffectBase
         Name = nameof(Texts.BlendModeName),
         Description = nameof(Texts.BlendModeDesc),
         ResourceType = typeof(Texts),
-        Order = 2)]
+        Order = 3)]
     [EnumComboBox]
     public GradientBlendMode BlendMode
     {
@@ -62,7 +76,7 @@ public sealed class GradientMapEffect : VideoEffectBase
         Name = nameof(Texts.IsHorizontalName),
         Description = nameof(Texts.IsHorizontalDesc),
         ResourceType = typeof(Texts),
-        Order = 3)]
+        Order = 4)]
     [ToggleSlider]
     public bool IsHorizontal
     {

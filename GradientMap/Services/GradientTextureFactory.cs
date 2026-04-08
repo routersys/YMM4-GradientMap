@@ -12,16 +12,22 @@ namespace GradientMap.Services;
 
 public sealed class GradientTextureFactory : IGradientTextureFactory
 {
-    private readonly Dictionary<string, WeakReference<ID2D1Bitmap>> _cache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<(string FilePath, int Index), WeakReference<ID2D1Bitmap>> _cache =
+        new(GradientCacheKeyComparer.Instance);
 
-    public ID2D1Bitmap? CreateGradientBitmap(ID2D1DeviceContext deviceContext, string filePath)
+    public ID2D1Bitmap? CreateGradientBitmap(
+        ID2D1DeviceContext deviceContext,
+        string filePath,
+        int gradientIndex)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             return null;
 
+        var key = (filePath, gradientIndex);
+
         lock (_cache)
         {
-            if (_cache.TryGetValue(filePath, out var weakRef) &&
+            if (_cache.TryGetValue(key, out var weakRef) &&
                 weakRef.TryGetTarget(out var cached))
                 return cached;
         }
@@ -30,14 +36,14 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
         {
             var bitmap = string.Equals(
                 Path.GetExtension(filePath), ".grd", StringComparison.OrdinalIgnoreCase)
-                ? CreateFromGrd(deviceContext, filePath)
+                ? CreateFromGrd(deviceContext, filePath, gradientIndex)
                 : CreateFromImage(deviceContext, filePath);
 
             if (bitmap is not null)
             {
                 lock (_cache)
                 {
-                    _cache[filePath] = new WeakReference<ID2D1Bitmap>(bitmap);
+                    _cache[key] = new WeakReference<ID2D1Bitmap>(bitmap);
                 }
             }
 
@@ -49,9 +55,12 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
         }
     }
 
-    private static ID2D1Bitmap? CreateFromGrd(ID2D1DeviceContext deviceContext, string filePath)
+    private static ID2D1Bitmap? CreateFromGrd(
+        ID2D1DeviceContext deviceContext,
+        string filePath,
+        int gradientIndex)
     {
-        var pixels = GrdParser.ParseToPixels(filePath);
+        var pixels = GrdParser.ParseToPixels(filePath, gradientIndex);
         if (pixels is null) return null;
 
         const int width = GrdParser.Resolution;
@@ -143,5 +152,20 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
             Load();
 
         return result ?? throw new InvalidOperationException("Bitmap load returned null.");
+    }
+
+    private sealed class GradientCacheKeyComparer
+        : IEqualityComparer<(string FilePath, int Index)>
+    {
+        public static readonly GradientCacheKeyComparer Instance = new();
+
+        public bool Equals((string FilePath, int Index) x, (string FilePath, int Index) y) =>
+            string.Equals(x.FilePath, y.FilePath, StringComparison.OrdinalIgnoreCase) &&
+            x.Index == y.Index;
+
+        public int GetHashCode((string FilePath, int Index) obj) =>
+            HashCode.Combine(
+                StringComparer.OrdinalIgnoreCase.GetHashCode(obj.FilePath),
+                obj.Index);
     }
 }

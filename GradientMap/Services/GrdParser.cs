@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using GradientMap.Models;
+using System.Collections.Immutable;
+using System.IO;
 using System.Text;
 
 namespace GradientMap.Services;
@@ -7,7 +9,7 @@ internal static class GrdParser
 {
     internal const int Resolution = 256;
 
-    internal static byte[]? ParseToPixels(string filePath)
+    internal static byte[]? ParseToPixels(string filePath, int gradientIndex = 0)
     {
         using var stream = File.OpenRead(filePath);
         using var reader = new BinaryReader(stream);
@@ -18,8 +20,48 @@ internal static class GrdParser
         var version = ReadU16(reader);
 
         return version >= 5
-            ? ParseVersion5(reader)
+            ? ParseVersion5(reader, gradientIndex)
             : ParseLegacy(reader, version);
+    }
+
+    internal static GrdManifest ReadManifest(string filePath)
+    {
+        try
+        {
+            using var stream = File.OpenRead(filePath);
+            using var reader = new BinaryReader(stream);
+
+            var sig = Encoding.ASCII.GetString(reader.ReadBytes(4));
+            if (sig != "8BGR") return GrdManifest.Empty;
+
+            var version = ReadU16(reader);
+            if (version < 5) return GrdManifest.Empty;
+
+            reader.BaseStream.Seek(4, SeekOrigin.Current);
+            var descriptor = DescriptorReader.ReadDescriptor(reader);
+            if (descriptor is null) return GrdManifest.Empty;
+
+            if (!descriptor.TryGetValue("GrdL", out var grdlObj) ||
+                grdlObj is not List<object?> grdList)
+                return GrdManifest.Empty;
+
+            var builder = ImmutableArray.CreateBuilder<GrdGradientEntry>(grdList.Count);
+            for (var i = 0; i < grdList.Count; i++)
+            {
+                if (grdList[i] is not Dictionary<string, object?> item) continue;
+                var grad = item.TryGetValue("Grad", out var g) && g is Dictionary<string, object?> gd
+                    ? gd : item;
+                var name = grad.TryGetValue("Nm  ", out var nm) && nm is string s && s.Length > 0
+                    ? s : $"Gradient {i + 1}";
+                builder.Add(new GrdGradientEntry(i, name, filePath));
+            }
+
+            return new GrdManifest(filePath, builder.ToImmutable());
+        }
+        catch
+        {
+            return GrdManifest.Empty;
+        }
     }
 
     private static byte[]? ParseLegacy(BinaryReader reader, ushort version)
@@ -67,14 +109,24 @@ internal static class GrdParser
         return SampleToPixels(colorStops, transStops);
     }
 
-    private static byte[]? ParseVersion5(BinaryReader reader)
+    private static byte[]? ParseVersion5(BinaryReader reader, int gradientIndex)
     {
         reader.BaseStream.Seek(4, SeekOrigin.Current);
 
         var descriptor = DescriptorReader.ReadDescriptor(reader);
         if (descriptor is null) return null;
 
-        var gradientObj = ResolveGradientDescriptor(descriptor);
+        if (!descriptor.TryGetValue("GrdL", out var grdlObj) ||
+            grdlObj is not List<object?> grdList ||
+            grdList.Count == 0)
+            return null;
+
+        var clampedIndex = Math.Clamp(gradientIndex, 0, grdList.Count - 1);
+
+        if (grdList[clampedIndex] is not Dictionary<string, object?> item)
+            return null;
+
+        var gradientObj = ResolveGradientDescriptor(item);
         if (gradientObj is null) return null;
 
         var colorStops = ExtractColorStops(gradientObj);
@@ -90,21 +142,13 @@ internal static class GrdParser
     private static Dictionary<string, object?>? ResolveGradientDescriptor(
         Dictionary<string, object?> root)
     {
-        if (!root.TryGetValue("GrdL", out var grdlObj) ||
-            grdlObj is not List<object?> grdList ||
-            grdList.Count == 0)
-            return null;
-
-        if (grdList[0] is not Dictionary<string, object?> firstGrad)
-            return null;
-
-        if (firstGrad.TryGetValue("Grad", out var gradObj) &&
+        if (root.TryGetValue("Grad", out var gradObj) &&
             gradObj is Dictionary<string, object?> gradDesc &&
             gradDesc.ContainsKey("Clrs"))
             return gradDesc;
 
-        if (firstGrad.ContainsKey("Clrs"))
-            return firstGrad;
+        if (root.ContainsKey("Clrs"))
+            return root;
 
         return null;
     }

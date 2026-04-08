@@ -19,6 +19,7 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
     private ID2D1Image? _sourceInput;
 
     private string _loadedPath = string.Empty;
+    private int _loadedIndex = -1;
     private bool _isFirst = true;
     private float _opacity;
     private int _blendMode;
@@ -80,9 +81,10 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
         var blendMode = (int)_item.BlendMode;
         var isHorizontal = _item.IsHorizontal ? 1 : 0;
         var path = _item.GradientFilePath;
+        var gradientIndex = _item.GradientIndex;
 
-        if (path != _loadedPath)
-            RefreshGradientBitmap(path);
+        if (path != _loadedPath || gradientIndex != _loadedIndex)
+            RefreshGradientBitmap(path, gradientIndex);
 
         if (_isFirst || _opacity != opacity)
             _effect.Opacity = opacity;
@@ -101,7 +103,7 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
         return effectDescription.DrawDescription;
     }
 
-    private void RefreshGradientBitmap(string path)
+    private void RefreshGradientBitmap(string path, int gradientIndex)
     {
         if (_gradientBitmap is not null)
         {
@@ -112,8 +114,10 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
         }
 
         _loadedPath = path;
+        _loadedIndex = gradientIndex;
 
-        var bitmap = _textureFactory.CreateGradientBitmap(_devices.DeviceContext, path);
+        var bitmap = _textureFactory.CreateGradientBitmap(
+            _devices.DeviceContext, path, gradientIndex);
         if (bitmap is null) return;
 
         _gradientBitmap = _registry.Track(bitmap);
