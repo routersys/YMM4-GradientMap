@@ -61,9 +61,9 @@
 <data name="CurrentCulture" xml:space="preserve"><value>ar-sa</value></data>
 <data name="EffectName" xml:space="preserve"><value>خريطة التدرج</value></data>
 <data name="GroupName" xml:space="preserve"><value>خريطة التدرج</value></data>
-<data name="GradientFilePathName" xml:space="preserve"><value>ملف التدرج</value></data>
+<data name="GradientFilePathName" xml:space="preserve"><value>ملف</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>مسار ملف صورة خريطة التدرج</value></data>
-<data name="GradientIndexName" xml:space="preserve"><value>تحديد التدرج</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>تحديد</value></data>
 <data name="GradientIndexDesc" xml:space="preserve"><value>تحديد حسب الفهرس من تدرجات متعددة داخل الملف</value></data>
 <data name="OpacityName" xml:space="preserve"><value>التعتيم</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>قوة تطبيق خريطة التدرج</value></data>
@@ -126,4 +126,11 @@
 <data name="BlendModeSaturationDesc" xml:space="preserve"><value>يطبق تشبع التدرج مع الحفاظ على الصبغة والإضاءة الأصليتين</value></data>
 <data name="BlendModeColorName" xml:space="preserve"><value>لون</value></data>
 <data name="BlendModeColorDesc" xml:space="preserve"><value>يطبق صبغة التدرج وتشبعه مع الحفاظ على الإضاءة الأصلية</value></data>
+<data name="CustomGradientName" xml:space="preserve"><value>تدرج</value></data>
+<data name="CustomGradientDesc" xml:space="preserve"><value>يعرّف التدرج بشكل مضمّن. عند الفراغ يُستخدم ملف التدرج.</value></data>
+<data name="DeleteStopName" xml:space="preserve"><value>حذف نقطة اللون</value></data>
+<data name="ExportAsGrdName" xml:space="preserve"><value>تصدير بصيغة GRD</value></data>
+<data name="ExportAsPngName" xml:space="preserve"><value>تصدير بصيغة PNG</value></data>
+<data name="ExportGrdFilterName" xml:space="preserve"><value>ملفات التدرج (*.grd)|*.grd</value></data>
+<data name="ExportPngFilterName" xml:space="preserve"><value>صورة PNG (*.png)|*.png</value></data>
 </root>

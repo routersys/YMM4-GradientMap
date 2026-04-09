@@ -1,5 +1,7 @@
 ﻿using GradientMap.Interfaces;
+using GradientMap.Models;
 using GradientMap.Services;
+using System.Runtime.InteropServices;
 using Vortice.Direct2D1;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Player.Video;
@@ -14,23 +16,29 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
     private readonly IGradientTextureFactory _textureFactory;
 
     private GradientMapCustomEffect? _effect;
-    private ID2D1Image? _effectOutput;
     private ID2D1Bitmap? _gradientBitmap;
+    private ID2D1Bitmap? _fallbackBitmap;
     private ID2D1Image? _sourceInput;
 
     private string _loadedPath = string.Empty;
     private int _loadedIndex = -1;
+    private string _loadedJson = string.Empty;
     private bool _isFirst = true;
     private float _opacity;
     private int _blendMode;
     private int _isHorizontal;
 
-    public ID2D1Image Output =>
-        _effectOutput is not null && _gradientBitmap is not null
-            ? _effectOutput
-            : _sourceInput
-              ?? throw new InvalidOperationException(
-                  "SetInput must be called before accessing Output.");
+    public ID2D1Image Output
+    {
+        get
+        {
+            if (_effect is not null && _effect.IsEnabled)
+                return _effect.Output;
+            return _sourceInput
+                ?? throw new InvalidOperationException(
+                    "SetInput must be called before accessing Output.");
+        }
+    }
 
     public GradientMapEffectProcessor(
         IGraphicsDevicesAndContext devices,
@@ -52,8 +60,49 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
             effect.Dispose();
             return;
         }
+
         _effect = effect;
-        _effectOutput = _registry.Track(effect.Output);
+        _fallbackBitmap = CreateFallbackBitmap();
+        if (_fallbackBitmap is not null)
+            _effect.SetGradientInput(_fallbackBitmap);
+    }
+
+    private ID2D1Bitmap? CreateFallbackBitmap()
+    {
+        try
+        {
+            var stops = new GradientColorStop[]
+            {
+                new(0f, 0, 0, 0, 255),
+                new(1f, 255, 255, 255, 255),
+            };
+            var pixels = GradientExportService.RasterizeGradient(stops);
+            return CreateD2DBitmap(pixels, GradientExportService.GradientResolution);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private ID2D1Bitmap CreateD2DBitmap(byte[] pixels, int width)
+    {
+        var handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
+        try
+        {
+            var size = new Vortice.Mathematics.SizeI(width, 1);
+            var props = new BitmapProperties1(
+                new Vortice.DCommon.PixelFormat(
+                    Vortice.DXGI.Format.B8G8R8A8_UNorm,
+                    Vortice.DCommon.AlphaMode.Premultiplied),
+                96f, 96f, BitmapOptions.None);
+            return ((ID2D1DeviceContext1)_devices.DeviceContext).CreateBitmap(
+                size, handle.AddrOfPinnedObject(), width * 4, props);
+        }
+        finally
+        {
+            handle.Free();
+        }
     }
 
     public void SetInput(ID2D1Image? input)
@@ -65,7 +114,9 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
     public void ClearInput()
     {
         _sourceInput = null;
-        _effect?.ClearAllInputs();
+        _effect?.SetSourceInput(null);
+        if (_fallbackBitmap is not null)
+            _effect?.SetGradientInput(_fallbackBitmap);
     }
 
     public DrawDescription Update(EffectDescription effectDescription)
@@ -80,11 +131,31 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
         var opacity = (float)(_item.Opacity.GetValue(frame, length, fps) / 100d);
         var blendMode = (int)_item.BlendMode;
         var isHorizontal = _item.IsHorizontal ? 1 : 0;
-        var path = _item.GradientFilePath;
+        var json = _item.CustomGradientJson ?? string.Empty;
+        var path = _item.GradientFilePath ?? string.Empty;
         var gradientIndex = _item.GradientIndex;
 
-        if (path != _loadedPath || gradientIndex != _loadedIndex)
-            RefreshGradientBitmap(path, gradientIndex);
+        var jsonChanged = json != _loadedJson;
+        var fileChanged = path != _loadedPath || gradientIndex != _loadedIndex;
+
+        if (fileChanged && !jsonChanged)
+        {
+            RefreshGradientBitmapFromFile(path, gradientIndex, json);
+        }
+        else if (jsonChanged && !fileChanged)
+        {
+            if (!string.IsNullOrWhiteSpace(json))
+                RefreshGradientBitmapFromJson(json, path, gradientIndex);
+            else
+                RefreshGradientBitmapFromFile(path, gradientIndex, json);
+        }
+        else if (jsonChanged && fileChanged)
+        {
+            if (!string.IsNullOrWhiteSpace(json))
+                RefreshGradientBitmapFromJson(json, path, gradientIndex);
+            else if (!string.IsNullOrWhiteSpace(path))
+                RefreshGradientBitmapFromFile(path, gradientIndex, json);
+        }
 
         if (_isFirst || _opacity != opacity)
             _effect.Opacity = opacity;
@@ -103,30 +174,59 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
         return effectDescription.DrawDescription;
     }
 
-    private void RefreshGradientBitmap(string path, int gradientIndex)
+    private void RefreshGradientBitmapFromJson(string json, string path, int gradientIndex)
     {
-        if (_gradientBitmap is not null)
-        {
-            _effect?.SetGradientInput(null);
-            _registry.Untrack(_gradientBitmap);
-            _gradientBitmap.Dispose();
-            _gradientBitmap = null;
-        }
-
+        ReleaseBitmap();
+        _loadedJson = json;
         _loadedPath = path;
         _loadedIndex = gradientIndex;
 
-        var bitmap = _textureFactory.CreateGradientBitmap(
-            _devices.DeviceContext, path, gradientIndex);
-        if (bitmap is null) return;
+        var bitmap = _textureFactory.CreateGradientBitmapFromJson(_devices.DeviceContext, json);
+        if (bitmap is null)
+        {
+            _effect?.SetGradientInput(_fallbackBitmap);
+            return;
+        }
 
         _gradientBitmap = _registry.Track(bitmap);
         _effect?.SetGradientInput(bitmap);
     }
 
+    private void RefreshGradientBitmapFromFile(string path, int gradientIndex, string json)
+    {
+        ReleaseBitmap();
+        _loadedPath = path;
+        _loadedIndex = gradientIndex;
+        _loadedJson = json;
+
+        var bitmap = _textureFactory.CreateGradientBitmap(_devices.DeviceContext, path, gradientIndex);
+        if (bitmap is null)
+        {
+            _effect?.SetGradientInput(_fallbackBitmap);
+            return;
+        }
+
+        _gradientBitmap = _registry.Track(bitmap);
+        _effect?.SetGradientInput(bitmap);
+    }
+
+    private void ReleaseBitmap()
+    {
+        if (_gradientBitmap is null) return;
+        _effect?.SetGradientInput(_fallbackBitmap);
+        _registry.Untrack(_gradientBitmap);
+        _gradientBitmap.Dispose();
+        _gradientBitmap = null;
+    }
+
     public void Dispose()
     {
-        _effect?.ClearAllInputs();
+        ReleaseBitmap();
+        _effect?.SetSourceInput(null);
+        _effect?.Dispose();
+        _effect = null;
+        _fallbackBitmap?.Dispose();
+        _fallbackBitmap = null;
         _registry.Dispose();
     }
 }

@@ -61,9 +61,9 @@
 <data name="CurrentCulture" xml:space="preserve"><value>ja-jp</value></data>
 <data name="EffectName" xml:space="preserve"><value>グラデーションマップ</value></data>
 <data name="GroupName" xml:space="preserve"><value>グラデーションマップ</value></data>
-<data name="GradientFilePathName" xml:space="preserve"><value>グラデーションファイル</value></data>
+<data name="GradientFilePathName" xml:space="preserve"><value>ファイル</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>グラデーションマップ画像ファイルのパス</value></data>
-<data name="GradientIndexName" xml:space="preserve"><value>グラデーション選択</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>選択</value></data>
 <data name="GradientIndexDesc" xml:space="preserve"><value>ファイル内の複数グラデーションからインデックスで選択します</value></data>
 <data name="OpacityName" xml:space="preserve"><value>不透明度</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>グラデーションマップの適用強度</value></data>
@@ -126,4 +126,11 @@
 <data name="BlendModeSaturationDesc" xml:space="preserve"><value>元の色相と輝度を維持しグラデーションの彩度を適用します</value></data>
 <data name="BlendModeColorName" xml:space="preserve"><value>カラー</value></data>
 <data name="BlendModeColorDesc" xml:space="preserve"><value>元の輝度を維持しグラデーションの色相と彩度を適用します</value></data>
+<data name="CustomGradientName" xml:space="preserve"><value>グラデーション</value></data>
+<data name="CustomGradientDesc" xml:space="preserve"><value>グラデーションをインラインで定義します。空の場合はグラデーションファイルを使用します。</value></data>
+<data name="DeleteStopName" xml:space="preserve"><value>カラーポイントを削除</value></data>
+<data name="ExportAsGrdName" xml:space="preserve"><value>GRDとして書き出す</value></data>
+<data name="ExportAsPngName" xml:space="preserve"><value>PNGとして書き出す</value></data>
+<data name="ExportGrdFilterName" xml:space="preserve"><value>グラデーションファイル (*.grd)|*.grd</value></data>
+<data name="ExportPngFilterName" xml:space="preserve"><value>PNG イメージ (*.png)|*.png</value></data>
 </root>

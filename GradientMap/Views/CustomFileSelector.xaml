@@ -192,12 +192,15 @@
         </ComboBox>
 
         <Button Grid.Column="1"
-                Content="..."
                 Command="{Binding BrowseCommand}"
                 Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
                 Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
                 BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
-                Padding="4,0"
-                FontWeight="Bold"/>
+                Padding="4,0">
+            <Path Data="M6.1,10L4,18V8H21A2,2 0 0,0 19,6H12L10,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H19C19.9,20 20.7,19.4 20.9,18.5L23.2,10H6.1M19,18H6L7.6,12H20.6L19,18Z"
+                  Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                  Width="14" Height="14"
+                  Stretch="Uniform"/>
+        </Button>
     </Grid>
 </UserControl>

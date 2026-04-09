@@ -1,9 +1,9 @@
 ﻿Key,Parameter,ja-jp,en-us,zh-cn,zh-tw,ko-kr,es-es,ar-sa,id-id
 EffectName,,グラデーションマップ,Gradient Map,渐变映射,漸層對應,그라디언트 맵,Mapa de degradado,خريطة التدرج,Peta Gradien
 GroupName,,グラデーションマップ,Gradient Map,渐变映射,漸層對應,그라디언트 맵,Mapa de degradado,خريطة التدرج,Peta Gradien
-GradientFilePathName,,グラデーションファイル,Gradient File,渐变文件,漸層檔案,그라디언트 파일,Archivo de degradado,ملف التدرج,File Gradien
+GradientFilePathName,,ファイル,File,文件,檔案,파일,Archivo,ملف,File
 GradientFilePathDesc,,グラデーションマップ画像ファイルのパス,Path to the gradient map image file,渐变映射图像文件路径,漸層對應影像檔案路徑,그라디언트 맵 이미지 파일 경로,Ruta al archivo de imagen del mapa de degradado,مسار ملف صورة خريطة التدرج,Jalur file gambar peta gradien
-GradientIndexName,,グラデーション選択,Gradient Selection,渐变选择,漸層選擇,그라디언트 선택,Selección de degradado,تحديد التدرج,Pilihan Gradien
+GradientIndexName,,選択,Selection,选择,選擇,선택,Selección,تحديد,Pilihan
 GradientIndexDesc,,ファイル内の複数グラデーションからインデックスで選択します,Select by index from multiple gradients within the file,从文件中的多个渐变中按索引选择,從檔案內多個漸層中依索引選取,파일 내 여러 그라디언트 중 인덱스로 선택합니다,Selecciona por índice entre múltiples degradados del archivo,تحديد حسب الفهرس من تدرجات متعددة داخل الملف,Pilih berdasarkan indeks dari beberapa gradien dalam file
 OpacityName,,不透明度,Opacity,不透明度,不透明度,불투명도,Opacidad,التعتيم,Opasitas
 OpacityDesc,,グラデーションマップの適用強度,Gradient map application strength,渐变映射应用强度,漸層對應套用強度,그라디언트 맵 적용 강도,Intensidad de aplicación del mapa de degradado,قوة تطبيق خريطة التدرج,Kekuatan penerapan peta gradien
@@ -66,3 +66,10 @@ BlendModeSaturationName,,彩度,Saturation,饱和度,飽和度,채도,Saturació
 BlendModeSaturationDesc,,元の色相と輝度を維持しグラデーションの彩度を適用します,Applies gradient saturation while preserving original hue and luminance,保留原始色调和亮度并应用渐变饱和度,保留原始色相和亮度並套用漸層飽和度,원본 색조와 밝기를 유지하면서 그라디언트 채도를 적용합니다,Aplica la saturación del degradado manteniendo el tono y la luminancia originales,يطبق تشبع التدرج مع الحفاظ على الصبغة والإضاءة الأصليتين,Menerapkan saturasi gradien sambil mempertahankan hue dan luminance asli
 BlendModeColorName,,カラー,Color,颜色,色彩,색상,Color,لون,Warna
 BlendModeColorDesc,,元の輝度を維持しグラデーションの色相と彩度を適用します,Applies gradient hue and saturation while preserving original luminance,保留原始亮度并应用渐变色调和饱和度,保留原始亮度並套用漸層色相和飽和度,원본 밝기를 유지하면서 그라디언트 색조와 채도를 적용합니다,Aplica el tono y la saturación del degradado manteniendo la luminancia original,يطبق صبغة التدرج وتشبعه مع الحفاظ على الإضاءة الأصلية,Menerapkan hue dan saturasi gradien sambil mempertahankan luminance asli
+CustomGradientName,,グラデーション,Gradient,渐变,漸層,그라디언트,Degradado,تدرج,Gradien
+CustomGradientDesc,,グラデーションをインラインで定義します。空の場合はグラデーションファイルを使用します。,Defines the gradient inline. When empty the gradient file is used.,定义内联渐变。为空时使用渐变文件。,以內嵌方式定義漸層。為空時使用漸層檔案。,그라디언트를 인라인으로 정의합니다. 비어 있으면 그라디언트 파일을 사용합니다.,Define el degradado de forma integrada. Si está vacío se usa el archivo de degradado.,يعرّف التدرج بشكل مضمّن. عند الفراغ يُستخدم ملف التدرج.,Mendefinisikan gradien secara langsung. Jika kosong file gradien digunakan.
+DeleteStopName,,カラーポイントを削除,Delete Color Stop,删除颜色点,刪除色標,색상 포인트 삭제,Eliminar punto de color,حذف نقطة اللون,Hapus Titik Warna
+ExportAsGrdName,,GRDとして書き出す,Export as GRD,导出为GRD,匯出為GRD,GRD로 내보내기,Exportar como GRD,تصدير بصيغة GRD,Ekspor sebagai GRD
+ExportAsPngName,,PNGとして書き出す,Export as PNG,导出为PNG,匯出為PNG,PNG로 내보내기,Exportar como PNG,تصدير بصيغة PNG,Ekspor sebagai PNG
+ExportGrdFilterName,,グラデーションファイル (*.grd)|*.grd,Gradient Files (*.grd)|*.grd,渐变文件 (*.grd)|*.grd,漸層檔案 (*.grd)|*.grd,그라디언트 파일 (*.grd)|*.grd,Archivos de degradado (*.grd)|*.grd,ملفات التدرج (*.grd)|*.grd,File Gradien (*.grd)|*.grd
+ExportPngFilterName,,PNG イメージ (*.png)|*.png,PNG Image (*.png)|*.png,PNG图像 (*.png)|*.png,PNG 影像 (*.png)|*.png,PNG 이미지 (*.png)|*.png,Imagen PNG (*.png)|*.png,صورة PNG (*.png)|*.png,Gambar PNG (*.png)|*.png

@@ -4,17 +4,12 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Vortice.DCommon;
 using Vortice.Direct2D1;
-using Vortice.Mathematics;
 
 namespace GradientMap.Services;
 
 public sealed class GradientTextureFactory : IGradientTextureFactory
 {
-    private readonly Dictionary<(string FilePath, int Index), WeakReference<ID2D1Bitmap>> _cache =
-        new(GradientCacheKeyComparer.Instance);
-
     public ID2D1Bitmap? CreateGradientBitmap(
         ID2D1DeviceContext deviceContext,
         string filePath,
@@ -23,31 +18,33 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             return null;
 
-        var key = (filePath, gradientIndex);
-
-        lock (_cache)
-        {
-            if (_cache.TryGetValue(key, out var weakRef) &&
-                weakRef.TryGetTarget(out var cached))
-                return cached;
-        }
-
         try
         {
-            var bitmap = string.Equals(
+            return string.Equals(
                 Path.GetExtension(filePath), ".grd", StringComparison.OrdinalIgnoreCase)
                 ? CreateFromGrd(deviceContext, filePath, gradientIndex)
                 : CreateFromImage(deviceContext, filePath);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
-            if (bitmap is not null)
-            {
-                lock (_cache)
-                {
-                    _cache[key] = new WeakReference<ID2D1Bitmap>(bitmap);
-                }
-            }
+    public ID2D1Bitmap? CreateGradientBitmapFromJson(
+        ID2D1DeviceContext deviceContext,
+        string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
 
-            return bitmap;
+        try
+        {
+            var stops = GradientStopSerializer.Deserialize(json);
+            if (stops.Length < 2) return null;
+
+            var pixels = GradientExportService.RasterizeGradient(stops);
+            return CreateBitmapFromPixels(deviceContext, pixels, GradientExportService.GradientResolution);
         }
         catch
         {
@@ -63,26 +60,25 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
         var pixels = GrdParser.ParseToPixels(filePath, gradientIndex);
         if (pixels is null) return null;
 
-        const int width = GrdParser.Resolution;
-        const int stride = width * 4;
+        return CreateBitmapFromPixels(deviceContext, pixels, GrdParser.Resolution);
+    }
 
+    private static ID2D1Bitmap CreateBitmapFromPixels(
+        ID2D1DeviceContext deviceContext,
+        byte[] pixels,
+        int width)
+    {
         var handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
         try
         {
-            return deviceContext.CreateBitmap(
-                new SizeI(width, 1),
-                handle.AddrOfPinnedObject(),
-                stride,
-                new BitmapProperties
-                {
-                    PixelFormat = new()
-                    {
-                        Format = Vortice.DXGI.Format.B8G8R8A8_UNorm,
-                        AlphaMode = AlphaMode.Premultiplied,
-                    },
-                    DpiX = 96f,
-                    DpiY = 96f,
-                });
+            var size = new Vortice.Mathematics.SizeI(width, 1);
+            var props = new BitmapProperties1(
+                new Vortice.DCommon.PixelFormat(
+                    Vortice.DXGI.Format.B8G8R8A8_UNorm,
+                    Vortice.DCommon.AlphaMode.Premultiplied),
+                96f, 96f, BitmapOptions.None);
+            return ((ID2D1DeviceContext1)deviceContext).CreateBitmap(
+                size, handle.AddrOfPinnedObject(), width * 4, props);
         }
         finally
         {
@@ -103,20 +99,14 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
         try
         {
             source.CopyPixels(buffer, stride, 0);
-            return deviceContext.CreateBitmap(
-                new SizeI(width, height),
-                handle.AddrOfPinnedObject(),
-                stride,
-                new BitmapProperties
-                {
-                    PixelFormat = new()
-                    {
-                        Format = Vortice.DXGI.Format.B8G8R8A8_UNorm,
-                        AlphaMode = AlphaMode.Premultiplied,
-                    },
-                    DpiX = 96f,
-                    DpiY = 96f,
-                });
+            var size = new Vortice.Mathematics.SizeI(width, height);
+            var props = new BitmapProperties1(
+                new Vortice.DCommon.PixelFormat(
+                    Vortice.DXGI.Format.B8G8R8A8_UNorm,
+                    Vortice.DCommon.AlphaMode.Premultiplied),
+                96f, 96f, BitmapOptions.None);
+            return ((ID2D1DeviceContext1)deviceContext).CreateBitmap(
+                size, handle.AddrOfPinnedObject(), stride, props);
         }
         finally
         {
@@ -152,20 +142,5 @@ public sealed class GradientTextureFactory : IGradientTextureFactory
             Load();
 
         return result ?? throw new InvalidOperationException("Bitmap load returned null.");
-    }
-
-    private sealed class GradientCacheKeyComparer
-        : IEqualityComparer<(string FilePath, int Index)>
-    {
-        public static readonly GradientCacheKeyComparer Instance = new();
-
-        public bool Equals((string FilePath, int Index) x, (string FilePath, int Index) y) =>
-            string.Equals(x.FilePath, y.FilePath, StringComparison.OrdinalIgnoreCase) &&
-            x.Index == y.Index;
-
-        public int GetHashCode((string FilePath, int Index) obj) =>
-            HashCode.Combine(
-                StringComparer.OrdinalIgnoreCase.GetHashCode(obj.FilePath),
-                obj.Index);
     }
 }

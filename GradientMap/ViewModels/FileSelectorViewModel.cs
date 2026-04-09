@@ -27,6 +27,8 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
         _filter = BuildDialogFilter(filter);
         ToggleFavoriteCommand = new ActionCommand(_ => true, OnToggleFavorite);
         BrowseCommand = new ActionCommand(_ => true, _ => Browse());
+
+        RefreshFiles();
     }
 
     public ObservableCollection<FileEntry> Files { get; } = [];

@@ -17,6 +17,20 @@ public sealed class GradientMapEffect : VideoEffectBase
 
     [Display(
         GroupName = nameof(Texts.GroupName),
+        Name = nameof(Texts.CustomGradientName),
+        Description = nameof(Texts.CustomGradientDesc),
+        ResourceType = typeof(Texts),
+        Order = -1)]
+    [GradientEditor]
+    public string CustomGradientJson
+    {
+        get => _customGradientJson;
+        set => Set(ref _customGradientJson, value);
+    }
+    private string _customGradientJson = string.Empty;
+
+    [Display(
+        GroupName = nameof(Texts.GroupName),
         Name = nameof(Texts.GradientFilePathName),
         Description = nameof(Texts.GradientFilePathDesc),
         ResourceType = typeof(Texts),

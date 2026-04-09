@@ -31,12 +31,6 @@ public sealed class GradientMapCustomEffect(IGraphicsDevicesAndContext devices)
     public void SetSourceInput(ID2D1Image? image) => SetInput(0, image, true);
     public void SetGradientInput(ID2D1Image? bitmap) => SetInput(1, bitmap, true);
 
-    public void ClearAllInputs()
-    {
-        SetInput(0, null, true);
-        SetInput(1, null, true);
-    }
-
     [CustomEffect(2)]
     private sealed class EffectImpl : D2D1CustomShaderEffectImplBase<EffectImpl>
     {
@@ -99,9 +93,9 @@ public sealed class GradientMapCustomEffect(IGraphicsDevicesAndContext devices)
 
         public enum Properties
         {
-            Opacity = 0,
-            BlendMode = 1,
-            IsHorizontal = 2,
+            Opacity,
+            BlendMode,
+            IsHorizontal
         }
     }
 }

@@ -61,9 +61,9 @@
 <data name="CurrentCulture" xml:space="preserve"><value>es-es</value></data>
 <data name="EffectName" xml:space="preserve"><value>Mapa de degradado</value></data>
 <data name="GroupName" xml:space="preserve"><value>Mapa de degradado</value></data>
-<data name="GradientFilePathName" xml:space="preserve"><value>Archivo de degradado</value></data>
+<data name="GradientFilePathName" xml:space="preserve"><value>Archivo</value></data>
 <data name="GradientFilePathDesc" xml:space="preserve"><value>Ruta al archivo de imagen del mapa de degradado</value></data>
-<data name="GradientIndexName" xml:space="preserve"><value>Selección de degradado</value></data>
+<data name="GradientIndexName" xml:space="preserve"><value>Selección</value></data>
 <data name="GradientIndexDesc" xml:space="preserve"><value>Selecciona por índice entre múltiples degradados del archivo</value></data>
 <data name="OpacityName" xml:space="preserve"><value>Opacidad</value></data>
 <data name="OpacityDesc" xml:space="preserve"><value>Intensidad de aplicación del mapa de degradado</value></data>
@@ -126,4 +126,11 @@
 <data name="BlendModeSaturationDesc" xml:space="preserve"><value>Aplica la saturación del degradado manteniendo el tono y la luminancia originales</value></data>
 <data name="BlendModeColorName" xml:space="preserve"><value>Color</value></data>
 <data name="BlendModeColorDesc" xml:space="preserve"><value>Aplica el tono y la saturación del degradado manteniendo la luminancia original</value></data>
+<data name="CustomGradientName" xml:space="preserve"><value>Degradado</value></data>
+<data name="CustomGradientDesc" xml:space="preserve"><value>Define el degradado de forma integrada. Si está vacío se usa el archivo de degradado.</value></data>
+<data name="DeleteStopName" xml:space="preserve"><value>Eliminar punto de color</value></data>
+<data name="ExportAsGrdName" xml:space="preserve"><value>Exportar como GRD</value></data>
+<data name="ExportAsPngName" xml:space="preserve"><value>Exportar como PNG</value></data>
+<data name="ExportGrdFilterName" xml:space="preserve"><value>Archivos de degradado (*.grd)|*.grd</value></data>
+<data name="ExportPngFilterName" xml:space="preserve"><value>Imagen PNG (*.png)|*.png</value></data>
 </root>
