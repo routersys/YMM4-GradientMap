@@ -25,9 +25,12 @@ internal sealed class GrdEffectPropertyBridge : IDisposable
 
     public static GrdEffectPropertyBridge? TryCreate(GrdIndexSelector selector, object?[] items)
     {
-        var effects = items
-            .OfType<GradientMapEffect>()
-            .ToList();
+        var effects = new List<GradientMapEffect>(items.Length);
+        for (var i = 0; i < items.Length; i++)
+        {
+            if (items[i] is GradientMapEffect effect)
+                effects.Add(effect);
+        }
 
         if (effects.Count == 0) return null;
         return new GrdEffectPropertyBridge(selector, effects);

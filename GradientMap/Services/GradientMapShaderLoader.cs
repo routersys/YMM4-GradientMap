@@ -6,7 +6,7 @@ internal static class GradientMapShaderLoader
 {
     private static readonly byte[] ShaderBytes = LoadShaderBytes();
 
-    public static ReadOnlySpan<byte> GetShaderBytes() => ShaderBytes;
+    public static byte[] GetShaderBytesArray() => ShaderBytes;
 
     private static byte[] LoadShaderBytes()
     {

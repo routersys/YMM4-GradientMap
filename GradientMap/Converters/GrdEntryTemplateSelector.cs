@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using GradientMap.Models;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 

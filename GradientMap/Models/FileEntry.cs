@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using GradientMap.Core;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
@@ -7,11 +8,6 @@ namespace GradientMap.Models;
 
 public sealed class FileEntry : INotifyPropertyChanged
 {
-    private bool _isFavorite;
-    private BitmapSource? _thumbnail;
-    private bool _thumbnailLoaded;
-    private bool _thumbnailLoading;
-
     public FileEntry(string filePath)
     {
         FilePath = filePath;
@@ -26,8 +22,13 @@ public sealed class FileEntry : INotifyPropertyChanged
 
     public bool IsFavorite
     {
-        get => _isFavorite;
-        set => SetField(ref _isFavorite, value);
+        get;
+        set
+        {
+            if (field == value) return;
+            field = value;
+            Notify();
+        }
     }
 
     public BitmapSource? Thumbnail
@@ -36,10 +37,17 @@ public sealed class FileEntry : INotifyPropertyChanged
         {
             if (!_thumbnailLoaded && !_thumbnailLoading)
                 _ = LoadThumbnailAsync();
-            return _thumbnail;
+            return field;
         }
-        private set => SetField(ref _thumbnail, value);
+        private set
+        {
+            field = value;
+            Notify();
+        }
     }
+
+    private bool _thumbnailLoaded;
+    private bool _thumbnailLoading;
 
     private async Task LoadThumbnailAsync()
     {
@@ -53,12 +61,8 @@ public sealed class FileEntry : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return;
-        field = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
+    private void Notify([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, PropertyChangedEventArgsCache.Get(name!));
 
     public override bool Equals(object? obj) =>
         obj is FileEntry other &&

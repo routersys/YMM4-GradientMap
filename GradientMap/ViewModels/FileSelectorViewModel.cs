@@ -1,4 +1,5 @@
-﻿using GradientMap.Models;
+﻿using GradientMap.Core;
+using GradientMap.Models;
 using GradientMap.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -13,21 +14,21 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
 {
     private readonly string[] _extensions;
     private readonly string _filter;
-    private string _filePath = string.Empty;
     private string _currentDirectory = string.Empty;
-    private FileEntry? _selectedFile;
     private bool _suppressSync;
 
     public FileSelectorViewModel(string extensions, string filter)
     {
-        _extensions = extensions
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(e => e.StartsWith('.') ? e.ToLowerInvariant() : $".{e.ToLowerInvariant()}")
-            .ToArray();
-        _filter = BuildDialogFilter(filter);
+        var parts = extensions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        _extensions = new string[parts.Length];
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var ext = parts[i];
+            _extensions[i] = ext.StartsWith('.') ? ext.ToLowerInvariant() : $".{ext.ToLowerInvariant()}";
+        }
+        _filter = filter.Replace(',', '|');
         ToggleFavoriteCommand = new ActionCommand(_ => true, OnToggleFavorite);
         BrowseCommand = new ActionCommand(_ => true, _ => Browse());
-
         RefreshFiles();
     }
 
@@ -35,11 +36,11 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
 
     public FileEntry? SelectedFile
     {
-        get => _selectedFile;
+        get;
         set
         {
-            if (_selectedFile == value) return;
-            _selectedFile = value;
+            if (field == value) return;
+            field = value;
             OnPropertyChanged();
             if (!_suppressSync && value is not null)
                 FilePath = value.FilePath;
@@ -48,15 +49,15 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
 
     public string FilePath
     {
-        get => _filePath;
+        get => field;
         set
         {
-            if (string.Equals(_filePath, value, StringComparison.OrdinalIgnoreCase)) return;
-            _filePath = value;
+            if (string.Equals(field, value, StringComparison.OrdinalIgnoreCase)) return;
+            field = value;
             OnPropertyChanged();
             OnFilePathChanged();
         }
-    }
+    } = string.Empty;
 
     public ICommand ToggleFavoriteCommand { get; }
     public ICommand BrowseCommand { get; }
@@ -65,9 +66,9 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
 
     private void OnFilePathChanged()
     {
-        var dir = string.IsNullOrWhiteSpace(_filePath)
+        var dir = string.IsNullOrWhiteSpace(FilePath)
             ? string.Empty
-            : Path.GetDirectoryName(_filePath) ?? string.Empty;
+            : Path.GetDirectoryName(FilePath) ?? string.Empty;
 
         if (!string.Equals(dir, _currentDirectory, StringComparison.OrdinalIgnoreCase))
         {
@@ -83,12 +84,20 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
         _suppressSync = true;
         try
         {
-            SelectedFile = Files.FirstOrDefault(
-                f => string.Equals(f.FilePath, _filePath, StringComparison.OrdinalIgnoreCase));
-
-            if (SelectedFile is null && !string.IsNullOrWhiteSpace(_filePath) && File.Exists(_filePath))
+            FileEntry? match = null;
+            for (var i = 0; i < Files.Count; i++)
             {
-                var entry = CreateEntry(_filePath);
+                if (string.Equals(Files[i].FilePath, FilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    match = Files[i];
+                    break;
+                }
+            }
+            SelectedFile = match;
+
+            if (SelectedFile is null && !string.IsNullOrWhiteSpace(FilePath) && File.Exists(FilePath))
+            {
+                var entry = new FileEntry(FilePath);
                 Files.Add(entry);
                 SelectedFile = entry;
             }
@@ -102,33 +111,46 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
     private void RefreshFiles()
     {
         Files.Clear();
-
         var settings = GradientMapSettings.Instance;
+        var favoritePaths = settings.FavoritePaths;
 
-        var favorites = settings.FavoritePaths
-            .Where(p => File.Exists(p) && IsSupported(p))
-            .Select(CreateEntry)
-            .ToList();
-
-        foreach (var fav in favorites)
+        for (var i = 0; i < favoritePaths.Count; i++)
         {
-            fav.IsFavorite = true;
-            Files.Add(fav);
+            var p = favoritePaths[i];
+            if (!File.Exists(p) || !IsSupported(p)) continue;
+            Files.Add(new FileEntry(p) { IsFavorite = true });
         }
 
         if (!string.IsNullOrWhiteSpace(_currentDirectory) && Directory.Exists(_currentDirectory))
         {
-            var dirFiles = Directory.EnumerateFiles(_currentDirectory)
-                .Where(IsSupported)
-                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
-                .Select(CreateEntry);
+            var dirFiles = Directory.GetFiles(_currentDirectory);
+            Array.Sort(dirFiles, StringComparer.OrdinalIgnoreCase);
 
-            foreach (var entry in dirFiles)
+            for (var i = 0; i < dirFiles.Length; i++)
             {
-                if (Files.Any(f => string.Equals(f.FilePath, entry.FilePath, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-                entry.IsFavorite = settings.FavoritePaths
-                    .Contains(entry.FilePath, StringComparer.OrdinalIgnoreCase);
+                var path = dirFiles[i];
+                if (!IsSupported(path)) continue;
+
+                var alreadyExists = false;
+                for (var j = 0; j < Files.Count; j++)
+                {
+                    if (string.Equals(Files[j].FilePath, path, StringComparison.OrdinalIgnoreCase))
+                    {
+                        alreadyExists = true;
+                        break;
+                    }
+                }
+                if (alreadyExists) continue;
+
+                var entry = new FileEntry(path);
+                for (var j = 0; j < favoritePaths.Count; j++)
+                {
+                    if (string.Equals(favoritePaths[j], path, StringComparison.OrdinalIgnoreCase))
+                    {
+                        entry.IsFavorite = true;
+                        break;
+                    }
+                }
                 Files.Add(entry);
             }
         }
@@ -136,29 +158,44 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
 
     private bool IsSupported(string path)
     {
-        var ext = Path.GetExtension(path).ToLowerInvariant();
-        return _extensions.Contains(ext);
+        var ext = Path.GetExtension(path);
+        for (var i = 0; i < _extensions.Length; i++)
+        {
+            if (string.Equals(_extensions[i], ext, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
-
-    private static FileEntry CreateEntry(string path) => new(path);
 
     private void OnToggleFavorite(object? parameter)
     {
         if (parameter is not FileEntry entry) return;
-
         entry.IsFavorite = !entry.IsFavorite;
+
         var settings = GradientMapSettings.Instance;
         var updated = new List<string>(settings.FavoritePaths);
 
         if (entry.IsFavorite)
         {
-            if (!updated.Contains(entry.FilePath, StringComparer.OrdinalIgnoreCase))
+            var alreadyExists = false;
+            for (var i = 0; i < updated.Count; i++)
+            {
+                if (string.Equals(updated[i], entry.FilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+            if (!alreadyExists)
                 updated.Add(entry.FilePath);
         }
         else
         {
-            updated.RemoveAll(
-                p => string.Equals(p, entry.FilePath, StringComparison.OrdinalIgnoreCase));
+            for (var i = updated.Count - 1; i >= 0; i--)
+            {
+                if (string.Equals(updated[i], entry.FilePath, StringComparison.OrdinalIgnoreCase))
+                    updated.RemoveAt(i);
+            }
         }
 
         settings.FavoritePaths = updated;
@@ -176,16 +213,10 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
                 ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
                 : _currentDirectory
         };
-
         if (dialog.ShowDialog() == true)
             FilePath = dialog.FileName;
     }
 
-    private static string BuildDialogFilter(string filter)
-    {
-        return filter.Replace(',', '|');
-    }
-
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        PropertyChanged?.Invoke(this, PropertyChangedEventArgsCache.Get(name!));
 }

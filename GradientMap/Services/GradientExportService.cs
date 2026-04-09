@@ -62,13 +62,16 @@ public static class GradientExportService
 
     private static void WriteGrd(BinaryWriter w, string name, GradientColorStop[] stops)
     {
-        w.Write("8BGR"u8.ToArray());
+        w.Write("8BGR"u8);
+
         WriteU16(w, 3);
         WriteU16(w, 1);
 
-        var nameBytes = System.Text.Encoding.ASCII.GetBytes(
-            name.Length > 31 ? name[..31] : name);
-        WriteU16(w, (ushort)nameBytes.Length);
+        var truncated = name.Length > 31 ? name.AsSpan(0, 31) : name.AsSpan();
+        var nameByteCount = System.Text.Encoding.ASCII.GetByteCount(truncated);
+        Span<byte> nameBytes = nameByteCount <= 64 ? stackalloc byte[nameByteCount] : new byte[nameByteCount];
+        System.Text.Encoding.ASCII.GetBytes(truncated, nameBytes);
+        WriteU16(w, (ushort)nameByteCount);
         w.Write(nameBytes);
 
         WriteU16(w, 0);

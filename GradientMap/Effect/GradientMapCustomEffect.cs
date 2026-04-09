@@ -57,7 +57,7 @@ public sealed class GradientMapCustomEffect(IGraphicsDevicesAndContext devices)
             set { _cb.IsHorizontal = value; UpdateConstants(); }
         }
 
-        public EffectImpl() : base(GradientMapShaderLoader.GetShaderBytes().ToArray()) { }
+        public EffectImpl() : base(GradientMapShaderLoader.GetShaderBytesArray()) { }
 
         protected override void UpdateConstants()
         {

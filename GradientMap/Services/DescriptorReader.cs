@@ -29,10 +29,12 @@ internal static class DescriptorReader
             ["_class"] = classId
         };
 
+        Span<byte> tagBuf = stackalloc byte[4];
         for (var i = 0; i < count; i++)
         {
             var key = ReadId(reader);
-            var typeTag = Encoding.ASCII.GetString(reader.ReadBytes(4));
+            reader.BaseStream.ReadExactly(tagBuf);
+            var typeTag = Encoding.ASCII.GetString(tagBuf);
             result[key] = ReadValue(reader, typeTag);
         }
 
@@ -63,9 +65,11 @@ internal static class DescriptorReader
     {
         var count = ReadBigEndianInt32(reader);
         var list = new List<object?>(count);
+        Span<byte> listTagBuf = stackalloc byte[4];
         for (var i = 0; i < count; i++)
         {
-            var typeTag = Encoding.ASCII.GetString(reader.ReadBytes(4));
+            reader.BaseStream.ReadExactly(listTagBuf);
+            var typeTag = Encoding.ASCII.GetString(listTagBuf);
             list.Add(ReadValue(reader, typeTag));
         }
         return list;
@@ -80,7 +84,9 @@ internal static class DescriptorReader
 
     private static (string Unit, double Value) ReadUnitFloat(BinaryReader reader)
     {
-        var unit = Encoding.ASCII.GetString(reader.ReadBytes(4));
+        Span<byte> unitBuf = stackalloc byte[4];
+        reader.BaseStream.ReadExactly(unitBuf);
+        var unit = Encoding.ASCII.GetString(unitBuf);
         var value = ReadBigEndianDouble(reader);
         return (unit, value);
     }
@@ -95,9 +101,11 @@ internal static class DescriptorReader
     private static object? ReadReference(BinaryReader reader)
     {
         var count = ReadBigEndianInt32(reader);
+        Span<byte> refBuf = stackalloc byte[4];
         for (var i = 0; i < count; i++)
         {
-            var refType = Encoding.ASCII.GetString(reader.ReadBytes(4));
+            reader.BaseStream.ReadExactly(refBuf);
+            var refType = Encoding.ASCII.GetString(refBuf);
             switch (refType)
             {
                 case "prop":
@@ -147,38 +155,46 @@ internal static class DescriptorReader
         var charCount = ReadBigEndianInt32(reader);
         if (charCount <= 0) return string.Empty;
 
-        var sb = new StringBuilder(charCount);
+        var actualLength = 0;
+        Span<char> charBuf = charCount <= 512 ? stackalloc char[charCount] : new char[charCount];
         for (var i = 0; i < charCount; i++)
         {
             var c = (char)ReadBigEndianUInt16(reader);
-            if (c != '\0') sb.Append(c);
+            if (c != '\0')
+                charBuf[actualLength++] = c;
         }
-        return sb.ToString();
+        return new string(charBuf[..actualLength]);
     }
 
     private static string ReadId(BinaryReader reader)
     {
         var length = ReadBigEndianInt32(reader);
         if (length == 0) length = 4;
-        return Encoding.ASCII.GetString(reader.ReadBytes(length));
+        Span<byte> buf = length <= 256 ? stackalloc byte[length] : new byte[length];
+        reader.BaseStream.ReadExactly(buf);
+        return Encoding.ASCII.GetString(buf);
     }
 
     private static int ReadBigEndianInt32(BinaryReader reader)
     {
-        var buf = reader.ReadBytes(4);
+        Span<byte> buf = stackalloc byte[4];
+        reader.BaseStream.ReadExactly(buf);
         return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
     }
 
     private static ushort ReadBigEndianUInt16(BinaryReader reader)
     {
-        var buf = reader.ReadBytes(2);
+        Span<byte> buf = stackalloc byte[2];
+        reader.BaseStream.ReadExactly(buf);
         return (ushort)((buf[0] << 8) | buf[1]);
     }
 
     private static double ReadBigEndianDouble(BinaryReader reader)
     {
-        var buf = reader.ReadBytes(8);
-        if (BitConverter.IsLittleEndian) Array.Reverse(buf);
-        return BitConverter.ToDouble(buf, 0);
+        Span<byte> buf = stackalloc byte[8];
+        reader.BaseStream.ReadExactly(buf);
+        if (BitConverter.IsLittleEndian)
+            buf.Reverse();
+        return BitConverter.ToDouble(buf);
     }
 }

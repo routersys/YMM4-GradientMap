@@ -24,11 +24,14 @@ public sealed class GrdManifestReader : IGrdManifestReader
         if (manifest == GrdManifest.Empty)
             return manifest;
 
-        var entries = manifest.Gradients
-            .Select(e => new GrdGradientEntry(e.Index, e.Name, filePath))
-            .ToImmutableArray();
+        var builder = ImmutableArray.CreateBuilder<GrdGradientEntry>(manifest.Gradients.Length);
+        for (var i = 0; i < manifest.Gradients.Length; i++)
+        {
+            var e = manifest.Gradients[i];
+            builder.Add(new GrdGradientEntry(e.Index, e.Name, filePath));
+        }
 
-        var hydrated = new GrdManifest(filePath, entries);
+        var hydrated = new GrdManifest(filePath, builder.MoveToImmutable());
         _cache[filePath] = hydrated;
         return hydrated;
     }

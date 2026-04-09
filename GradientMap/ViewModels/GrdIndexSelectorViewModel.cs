@@ -1,4 +1,5 @@
-﻿using GradientMap.Interfaces;
+﻿using GradientMap.Core;
+using GradientMap.Interfaces;
 using GradientMap.Models;
 using GradientMap.Services;
 using System.Collections.ObjectModel;
@@ -11,9 +12,6 @@ namespace GradientMap.ViewModels;
 public sealed class GrdIndexSelectorViewModel : INotifyPropertyChanged
 {
     private readonly IGrdManifestReader _manifestReader;
-
-    private string _filePath = string.Empty;
-    private int _selectedIndex;
     private bool _suppressSync;
     private GrdManifest _manifest = GrdManifest.Empty;
 
@@ -28,12 +26,20 @@ public sealed class GrdIndexSelectorViewModel : INotifyPropertyChanged
 
     public GrdGradientEntry? SelectedEntry
     {
-        get => Entries.FirstOrDefault(e => e.Index == _selectedIndex);
+        get
+        {
+            for (var i = 0; i < Entries.Count; i++)
+            {
+                if (Entries[i].Index == GradientIndex)
+                    return Entries[i];
+            }
+            return null;
+        }
         set
         {
             if (value is null) return;
-            if (_selectedIndex == value.Index) return;
-            _selectedIndex = value.Index;
+            if (GradientIndex == value.Index) return;
+            GradientIndex = value.Index;
             OnPropertyChanged();
             if (!_suppressSync)
                 OnPropertyChanged(nameof(GradientIndex));
@@ -42,11 +48,11 @@ public sealed class GrdIndexSelectorViewModel : INotifyPropertyChanged
 
     public int GradientIndex
     {
-        get => _selectedIndex;
+        get;
         set
         {
-            if (_selectedIndex == value) return;
-            _selectedIndex = value;
+            if (field == value) return;
+            field = value;
             SyncSelection();
             OnPropertyChanged();
         }
@@ -54,36 +60,36 @@ public sealed class GrdIndexSelectorViewModel : INotifyPropertyChanged
 
     public string FilePath
     {
-        get => _filePath;
+        get => field;
         set
         {
-            if (string.Equals(_filePath, value, StringComparison.OrdinalIgnoreCase)) return;
-            _filePath = value;
+            if (string.Equals(field, value, StringComparison.OrdinalIgnoreCase)) return;
+            field = value;
             RefreshManifest();
         }
-    }
+    } = string.Empty;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void RefreshManifest()
     {
-        _manifest = string.IsNullOrWhiteSpace(_filePath) ||
-                    !File.Exists(_filePath) ||
-                    !string.Equals(Path.GetExtension(_filePath), ".grd", StringComparison.OrdinalIgnoreCase)
+        _manifest = string.IsNullOrWhiteSpace(FilePath) ||
+                    !File.Exists(FilePath) ||
+                    !string.Equals(Path.GetExtension(FilePath), ".grd", StringComparison.OrdinalIgnoreCase)
             ? GrdManifest.Empty
-            : _manifestReader.Read(_filePath);
+            : _manifestReader.Read(FilePath);
 
         Entries.Clear();
-        foreach (var entry in _manifest.Gradients)
-            Entries.Add(entry);
+        for (var i = 0; i < _manifest.Gradients.Length; i++)
+            Entries.Add(_manifest.Gradients[i]);
 
         _suppressSync = true;
         try
         {
             var clamped = _manifest.Count > 0
-                ? Math.Clamp(_selectedIndex, 0, _manifest.Count - 1)
+                ? Math.Clamp(GradientIndex, 0, _manifest.Count - 1)
                 : 0;
-            _selectedIndex = clamped;
+            GradientIndex = clamped;
             SyncSelection();
         }
         finally
@@ -95,11 +101,8 @@ public sealed class GrdIndexSelectorViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(GradientIndex));
     }
 
-    private void SyncSelection()
-    {
-        OnPropertyChanged(nameof(SelectedEntry));
-    }
+    private void SyncSelection() => OnPropertyChanged(nameof(SelectedEntry));
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        PropertyChanged?.Invoke(this, PropertyChangedEventArgsCache.Get(name!));
 }

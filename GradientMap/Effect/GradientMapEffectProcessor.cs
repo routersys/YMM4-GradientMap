@@ -135,8 +135,8 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
         var path = _item.GradientFilePath ?? string.Empty;
         var gradientIndex = _item.GradientIndex;
 
-        var jsonChanged = json != _loadedJson;
-        var fileChanged = path != _loadedPath || gradientIndex != _loadedIndex;
+        var jsonChanged = !string.Equals(json, _loadedJson, StringComparison.Ordinal);
+        var fileChanged = !string.Equals(path, _loadedPath, StringComparison.Ordinal) || gradientIndex != _loadedIndex;
 
         if (fileChanged && !jsonChanged)
         {

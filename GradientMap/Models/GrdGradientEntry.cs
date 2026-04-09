@@ -1,11 +1,13 @@
-﻿using GradientMap.Services;
+﻿using GradientMap.Core;
+using GradientMap.Services;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
 
+namespace GradientMap.Models;
+
 public sealed class GrdGradientEntry : INotifyPropertyChanged
 {
-    private BitmapSource? _thumbnail;
     private bool _thumbnailLoaded;
     private bool _thumbnailLoading;
 
@@ -26,12 +28,12 @@ public sealed class GrdGradientEntry : INotifyPropertyChanged
         {
             if (!_thumbnailLoaded && !_thumbnailLoading)
                 _ = LoadAsync();
-            return _thumbnail;
+            return field;
         }
         private set
         {
-            _thumbnail = value;
-            OnPropertyChanged();
+            field = value;
+            Notify();
         }
     }
 
@@ -47,6 +49,6 @@ public sealed class GrdGradientEntry : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    private void Notify([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, PropertyChangedEventArgsCache.Get(name!));
 }

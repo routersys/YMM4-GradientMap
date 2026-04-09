@@ -1,7 +1,6 @@
 ﻿using GradientMap.Models;
 using System.Collections.Immutable;
 using System.IO;
-using System.Text;
 
 namespace GradientMap.Services;
 
@@ -14,8 +13,10 @@ internal static class GrdParser
         using var stream = File.OpenRead(filePath);
         using var reader = new BinaryReader(stream);
 
-        var sig = Encoding.ASCII.GetString(reader.ReadBytes(4));
-        if (sig != "8BGR") return null;
+        Span<byte> sigBuf = stackalloc byte[4];
+        stream.ReadExactly(sigBuf);
+        if (sigBuf[0] != (byte)'8' || sigBuf[1] != (byte)'B' || sigBuf[2] != (byte)'G' || sigBuf[3] != (byte)'R')
+            return null;
 
         var version = ReadU16(reader);
 
@@ -31,8 +32,10 @@ internal static class GrdParser
             using var stream = File.OpenRead(filePath);
             using var reader = new BinaryReader(stream);
 
-            var sig = Encoding.ASCII.GetString(reader.ReadBytes(4));
-            if (sig != "8BGR") return GrdManifest.Empty;
+            Span<byte> sigBuf = stackalloc byte[4];
+            stream.ReadExactly(sigBuf);
+            if (sigBuf[0] != (byte)'8' || sigBuf[1] != (byte)'B' || sigBuf[2] != (byte)'G' || sigBuf[3] != (byte)'R')
+                return GrdManifest.Empty;
 
             var version = ReadU16(reader);
             if (version < 5) return GrdManifest.Empty;
@@ -517,13 +520,15 @@ internal static class GrdParser
 
     private static ushort ReadU16(BinaryReader r)
     {
-        var buf = r.ReadBytes(2);
+        Span<byte> buf = stackalloc byte[2];
+        r.BaseStream.ReadExactly(buf);
         return (ushort)((buf[0] << 8) | buf[1]);
     }
 
     private static uint ReadU32(BinaryReader r)
     {
-        var buf = r.ReadBytes(4);
+        Span<byte> buf = stackalloc byte[4];
+        r.BaseStream.ReadExactly(buf);
         return (uint)((buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3]);
     }
 }

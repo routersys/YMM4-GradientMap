@@ -1,4 +1,6 @@
-﻿using GradientMap.Localization;
+﻿using GradientMap.Core;
+using GradientMap.Localization;
+using GradientMap.Models;
 using GradientMap.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,37 +13,6 @@ namespace GradientMap.ViewModels;
 
 public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposable
 {
-    private sealed class DelegateCommand : ICommand
-    {
-        private readonly Action<object?> _execute;
-        private readonly Func<object?, bool>? _canExecute;
-
-        public DelegateCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
-        {
-            ArgumentNullException.ThrowIfNull(execute);
-            _execute = execute;
-            _canExecute = canExecute;
-        }
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add => CommandManager.RequerySuggested += value;
-            remove => CommandManager.RequerySuggested -= value;
-        }
-
-        public void RaiseCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
-
-        public void Execute(object? parameter)
-        {
-            if (CanExecute(parameter))
-            {
-                _execute(parameter);
-            }
-        }
-    }
-
     private readonly ObservableCollection<GradientColorStopViewModel> _stops = [];
     private LinearGradientBrush _gradientBrush;
     private bool _serializationSuspended;
@@ -58,7 +29,7 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
 
         _deleteStopCommand = new DelegateCommand(
             p => { if (p is GradientColorStopViewModel vm) RemoveStop(vm); },
-            p => p is GradientColorStopViewModel vm && CanDeleteStop(vm));
+            p => p is GradientColorStopViewModel && _stops.Count > 2);
 
         _exportAsGrdCommand = new DelegateCommand(_ => ExportAsGrd(), _ => CanExport);
         _exportAsPngCommand = new DelegateCommand(_ => ExportAsPng(), _ => CanExport);
@@ -71,8 +42,6 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
     public ReadOnlyObservableCollection<GradientColorStopViewModel> Stops { get; }
     public LinearGradientBrush GradientBrush => _gradientBrush;
     public bool CanExport => _stops.Count >= 2;
-
-    public bool CanDeleteStop(GradientColorStopViewModel stop) => _stops.Count > 2;
 
     public ICommand DeleteStopCommand { get; }
     public ICommand ExportAsGrdCommand { get; }
@@ -87,57 +56,63 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
         _stops.Clear();
 
         var models = GradientStopSerializer.Deserialize(json);
-        IEnumerable<GradientColorStopViewModel> vms = models.Length >= 2
-            ? models.OrderBy(m => m.Position)
-                    .Select(m => new GradientColorStopViewModel(
-                        m.Position, Color.FromArgb(m.A, m.R, m.G, m.B)))
-            : [
-                new GradientColorStopViewModel(0f, Colors.Black),
-                new GradientColorStopViewModel(1f, Colors.White)
-              ];
-
-        foreach (var vm in vms)
+        if (models.Length >= 2)
         {
-            vm.PropertyChanged += OnStopChanged;
-            _stops.Add(vm);
+            Array.Sort(models, (a, b) => a.Position.CompareTo(b.Position));
+            for (var i = 0; i < models.Length; i++)
+            {
+                var m = models[i];
+                var vm = new GradientColorStopViewModel(m.Position, Color.FromArgb(m.A, m.R, m.G, m.B));
+                vm.PropertyChanged += OnStopChanged;
+                _stops.Add(vm);
+            }
+        }
+        else
+        {
+            var black = new GradientColorStopViewModel(0f, Colors.Black);
+            var white = new GradientColorStopViewModel(1f, Colors.White);
+            black.PropertyChanged += OnStopChanged;
+            white.PropertyChanged += OnStopChanged;
+            _stops.Add(black);
+            _stops.Add(white);
         }
 
         RefreshBrush();
-        Raise(nameof(CanExport));
-        _deleteStopCommand.RaiseCanExecuteChanged();
-        _exportAsGrdCommand.RaiseCanExecuteChanged();
-        _exportAsPngCommand.RaiseCanExecuteChanged();
+        RaiseCommandStates();
     }
 
     public void AddStopAt(float position, Color color)
     {
-        var sorted = _stops.OrderBy(s => s.Position).ToList();
-        if (sorted.Any(s => Math.Abs(position - s.Position) < 1e-3f))
-            return;
+        for (var i = 0; i < _stops.Count; i++)
+        {
+            if (Math.Abs(position - _stops[i].Position) < 1e-3f)
+                return;
+        }
 
         var vm = new GradientColorStopViewModel(position, color);
         vm.PropertyChanged += OnStopChanged;
-        var idx = _stops.Count(s => s.Position <= position);
-        _stops.Insert(idx, vm);
+
+        var insertIndex = 0;
+        for (var i = 0; i < _stops.Count; i++)
+        {
+            if (_stops[i].Position <= position)
+                insertIndex = i + 1;
+        }
+
+        _stops.Insert(insertIndex, vm);
         RefreshBrush();
-        Raise(nameof(CanExport));
         Commit();
-        _deleteStopCommand.RaiseCanExecuteChanged();
-        _exportAsGrdCommand.RaiseCanExecuteChanged();
-        _exportAsPngCommand.RaiseCanExecuteChanged();
+        RaiseCommandStates();
     }
 
     public void RemoveStop(GradientColorStopViewModel stop)
     {
-        if (!CanDeleteStop(stop)) return;
+        if (_stops.Count <= 2) return;
         stop.PropertyChanged -= OnStopChanged;
         _stops.Remove(stop);
         RefreshBrush();
-        Raise(nameof(CanExport));
         Commit();
-        _deleteStopCommand.RaiseCanExecuteChanged();
-        _exportAsGrdCommand.RaiseCanExecuteChanged();
-        _exportAsPngCommand.RaiseCanExecuteChanged();
+        RaiseCommandStates();
     }
 
     public void SuspendSerialization() => _serializationSuspended = true;
@@ -145,25 +120,36 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
     public void ResumeAndFinalizeDrag()
     {
         _serializationSuspended = false;
-        var sorted = _stops.OrderBy(s => s.Position).ToList();
+
+        var count = _stops.Count;
+        var sorted = new GradientColorStopViewModel[count];
+        for (var i = 0; i < count; i++)
+            sorted[i] = _stops[i];
+        Array.Sort(sorted, (a, b) => a.Position.CompareTo(b.Position));
+
         DetachAll();
         _stops.Clear();
-        foreach (var s in sorted)
+        for (var i = 0; i < sorted.Length; i++)
         {
-            s.PropertyChanged += OnStopChanged;
-            _stops.Add(s);
+            sorted[i].PropertyChanged += OnStopChanged;
+            _stops.Add(sorted[i]);
         }
+
         RefreshBrush();
         Commit();
-        _deleteStopCommand.RaiseCanExecuteChanged();
-        _exportAsGrdCommand.RaiseCanExecuteChanged();
-        _exportAsPngCommand.RaiseCanExecuteChanged();
+        RaiseCommandStates();
     }
 
     public Color SampleColorAt(float position)
     {
-        var sorted = _stops.OrderBy(s => s.Position).ToArray();
-        if (sorted.Length == 0) return Colors.Black;
+        var count = _stops.Count;
+        if (count == 0) return Colors.Black;
+
+        var sorted = new GradientColorStopViewModel[count];
+        for (var i = 0; i < count; i++)
+            sorted[i] = _stops[i];
+        Array.Sort(sorted, (a, b) => a.Position.CompareTo(b.Position));
+
         if (position <= sorted[0].Position) return sorted[0].Color;
         if (position >= sorted[^1].Position) return sorted[^1].Color;
 
@@ -192,10 +178,19 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
 
     private void RefreshBrush()
     {
-        var stops = new GradientStopCollection(
-            _stops.OrderBy(s => s.Position)
-                  .Select(s => new GradientStop(s.Color, s.Position)));
-        var brush = new LinearGradientBrush(stops, new Point(0, 0), new Point(1, 0));
+        var count = _stops.Count;
+        var wpfStops = new GradientStop[count];
+        var sorted = new GradientColorStopViewModel[count];
+        for (var i = 0; i < count; i++)
+            sorted[i] = _stops[i];
+        Array.Sort(sorted, (a, b) => a.Position.CompareTo(b.Position));
+        for (var i = 0; i < count; i++)
+            wpfStops[i] = new GradientStop(sorted[i].Color, sorted[i].Position);
+
+        var brush = new LinearGradientBrush(
+            [..wpfStops],
+            new Point(0, 0),
+            new Point(1, 0));
         brush.Freeze();
         _gradientBrush = brush;
         Raise(nameof(GradientBrush));
@@ -203,14 +198,31 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
 
     private void Commit()
     {
-        var json = GradientStopSerializer.Serialize(
-            _stops.OrderBy(s => s.Position).Select(s => s.ToModel()));
+        var count = _stops.Count;
+        var models = new GradientColorStop[count];
+        var sorted = new GradientColorStopViewModel[count];
+        for (var i = 0; i < count; i++)
+            sorted[i] = _stops[i];
+        Array.Sort(sorted, (a, b) => a.Position.CompareTo(b.Position));
+        for (var i = 0; i < count; i++)
+            models[i] = sorted[i].ToModel();
+
+        var json = GradientStopSerializer.Serialize(models);
         GradientJsonChanged?.Invoke(json);
     }
 
     private void DetachAll()
     {
-        foreach (var s in _stops) s.PropertyChanged -= OnStopChanged;
+        for (var i = 0; i < _stops.Count; i++)
+            _stops[i].PropertyChanged -= OnStopChanged;
+    }
+
+    private void RaiseCommandStates()
+    {
+        Raise(nameof(CanExport));
+        _deleteStopCommand.RaiseCanExecuteChanged();
+        _exportAsGrdCommand.RaiseCanExecuteChanged();
+        _exportAsPngCommand.RaiseCanExecuteChanged();
     }
 
     private void ExportAsGrd()
@@ -221,7 +233,16 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
             DefaultExt = ".grd"
         };
         if (dialog.ShowDialog() != true) return;
-        var stops = _stops.OrderBy(s => s.Position).Select(s => s.ToModel()).ToArray();
+
+        var count = _stops.Count;
+        var sorted = new GradientColorStopViewModel[count];
+        for (var i = 0; i < count; i++)
+            sorted[i] = _stops[i];
+        Array.Sort(sorted, (a, b) => a.Position.CompareTo(b.Position));
+        var stops = new GradientColorStop[count];
+        for (var i = 0; i < count; i++)
+            stops[i] = sorted[i].ToModel();
+
         GradientExportService.ExportAsGrd(dialog.FileName, "Custom Gradient", stops);
     }
 
@@ -233,7 +254,16 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
             DefaultExt = ".png"
         };
         if (dialog.ShowDialog() != true) return;
-        var stops = _stops.OrderBy(s => s.Position).Select(s => s.ToModel()).ToArray();
+
+        var count = _stops.Count;
+        var sorted = new GradientColorStopViewModel[count];
+        for (var i = 0; i < count; i++)
+            sorted[i] = _stops[i];
+        Array.Sort(sorted, (a, b) => a.Position.CompareTo(b.Position));
+        var stops = new GradientColorStop[count];
+        for (var i = 0; i < count; i++)
+            stops[i] = sorted[i].ToModel();
+
         GradientExportService.ExportAsPng(dialog.FileName, stops);
     }
 
@@ -241,10 +271,10 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
 
     private static LinearGradientBrush BuildDefaultBrush()
     {
-        var stops = new GradientStopCollection([
-            new GradientStop(Colors.Black, 0),
-            new GradientStop(Colors.White, 1)]);
-        var brush = new LinearGradientBrush(stops, new Point(0, 0), new Point(1, 0));
+        var brush = new LinearGradientBrush(
+            [new GradientStop(Colors.Black, 0), new GradientStop(Colors.White, 1)],
+            new Point(0, 0),
+            new Point(1, 0));
         brush.Freeze();
         return brush;
     }
@@ -257,5 +287,5 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
     }
 
     private void Raise([CallerMemberName] string? n = null) =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+        PropertyChanged?.Invoke(this, PropertyChangedEventArgsCache.Get(n!));
 }

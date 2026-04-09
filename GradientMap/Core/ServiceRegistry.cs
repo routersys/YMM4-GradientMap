@@ -17,7 +17,7 @@ public sealed class ServiceRegistry : IServiceRegistry, IDisposable
     public void RegisterFactory<TService>(Func<TService> factory) where TService : notnull
     {
         ArgumentNullException.ThrowIfNull(factory);
-        _factories[typeof(TService)] = () => factory();
+        _factories[typeof(TService)] = factory as Func<object> ?? (() => factory());
     }
 
     public TService Resolve<TService>() where TService : notnull
@@ -34,8 +34,11 @@ public sealed class ServiceRegistry : IServiceRegistry, IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        foreach (var s in _singletons.Values.OfType<IDisposable>())
-            s.Dispose();
+        foreach (var pair in _singletons)
+        {
+            if (pair.Value is IDisposable disposable)
+                disposable.Dispose();
+        }
         _singletons.Clear();
         _factories.Clear();
     }

@@ -14,16 +14,26 @@ internal static class GradientStopSerializer
         try
         {
             var dtos = JsonSerializer.Deserialize<StopDto[]>(json, Options);
-            return dtos?.Select(d => new GradientColorStop(d.P, d.R, d.G, d.B, d.A)).ToArray() ?? [];
+            if (dtos is null || dtos.Length == 0) return [];
+            var result = new GradientColorStop[dtos.Length];
+            for (var i = 0; i < dtos.Length; i++)
+            {
+                var d = dtos[i];
+                result[i] = new GradientColorStop(d.P, d.R, d.G, d.B, d.A);
+            }
+            return result;
         }
         catch { return []; }
     }
 
-    public static string Serialize(IEnumerable<GradientColorStop> stops)
+    public static string Serialize(IReadOnlyList<GradientColorStop> stops)
     {
-        var dtos = stops
-            .Select(s => new StopDto { P = s.Position, R = s.R, G = s.G, B = s.B, A = s.A })
-            .ToArray();
+        var dtos = new StopDto[stops.Count];
+        for (var i = 0; i < stops.Count; i++)
+        {
+            var s = stops[i];
+            dtos[i] = new StopDto { P = s.Position, R = s.R, G = s.G, B = s.B, A = s.A };
+        }
         return JsonSerializer.Serialize(dtos, Options);
     }
 
