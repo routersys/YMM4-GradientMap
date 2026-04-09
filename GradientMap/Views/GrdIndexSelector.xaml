@@ -27,7 +27,6 @@
                 </Border>
                 <TextBlock Grid.Column="1"
                            Text="{Binding Name}"
-                           Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"/>
             </Grid>
@@ -44,7 +43,6 @@
                         Margin="4,0,4,0"
                         BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
                         BorderThickness="1"
-                        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
                         VerticalAlignment="Center">
                     <Image Source="{Binding Thumbnail}"
                            Stretch="Fill"
@@ -54,7 +52,7 @@
                             VerticalAlignment="Center"
                             Margin="4,0,6,0">
                     <TextBlock Text="{Binding Index, StringFormat={}#{0}}"
-                               Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
+                               Opacity="0.7"
                                FontSize="10"/>
                     <TextBlock Text="{Binding Name}"
                                FontSize="12"
@@ -62,95 +60,32 @@
                 </StackPanel>
             </Grid>
         </DataTemplate>
+
+        <conv:GrdEntryTemplateSelector x:Key="TemplateSelector"
+                                       SelectedTemplate="{StaticResource SelectedEntryTemplate}"
+                                       DropdownTemplate="{StaticResource DropdownEntryTemplate}"/>
     </UserControl.Resources>
 
     <Grid Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
         <ComboBox x:Name="GrdComboBox"
                   ItemsSource="{Binding Entries}"
                   SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
-                  ItemTemplate="{StaticResource DropdownEntryTemplate}"
-                  Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
-                  Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
-                  BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                  ItemTemplateSelector="{StaticResource TemplateSelector}"
                   VerticalContentAlignment="Center"
                   MaxDropDownHeight="320">
-            <ComboBox.Template>
-                <ControlTemplate TargetType="ComboBox">
-                    <Grid>
-                        <ToggleButton x:Name="toggleButton"
-                                      IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                      Background="{TemplateBinding Background}"
-                                      BorderBrush="{TemplateBinding BorderBrush}"
-                                      BorderThickness="0,1,1,1"
-                                      Focusable="False"
-                                      ClickMode="Press">
-                            <ToggleButton.Template>
-                                <ControlTemplate TargetType="ToggleButton">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="18"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border Grid.ColumnSpan="2"
-                                                Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                BorderThickness="0,1,1,1"/>
-                                        <Path Grid.Column="1"
-                                              Data="M 0 0 L 4 4 L 8 0 Z"
-                                              Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                                    </Grid>
-                                </ControlTemplate>
-                            </ToggleButton.Template>
-                        </ToggleButton>
-
-                        <ContentPresenter x:Name="contentSite"
-                                          IsHitTestVisible="False"
-                                          Content="{TemplateBinding SelectionBoxItem}"
-                                          ContentTemplate="{StaticResource SelectedEntryTemplate}"
-                                          Margin="4,0,22,0"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Stretch"/>
-
-                        <Popup x:Name="PART_Popup"
-                               IsOpen="{TemplateBinding IsDropDownOpen}"
-                               Placement="Bottom"
-                               PlacementTarget="{Binding ElementName=toggleButton}"
-                               HorizontalOffset="0"
-                               AllowsTransparency="True"
-                               Focusable="False"
-                               PopupAnimation="Slide">
-                            <Grid MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                  MaxHeight="{TemplateBinding MaxDropDownHeight}">
-                                <Border Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
-                                        BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
-                                        BorderThickness="1">
-                                    <ScrollViewer>
-                                        <ItemsPresenter/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Grid>
-                        </Popup>
-                    </Grid>
-                </ControlTemplate>
-            </ComboBox.Template>
-            <ComboBox.ItemContainerStyle>
-                <Style TargetType="ComboBoxItem">
-                    <Setter Property="Background"
-                            Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
-                    <Setter Property="Foreground"
-                            Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
-                    <Setter Property="Padding" Value="0"/>
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <ComboBox.Style>
+                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                     <Style.Triggers>
-                        <Trigger Property="IsHighlighted" Value="True">
-                            <Setter Property="Background"
-                                    Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
-                            <Setter Property="Foreground"
-                                    Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
                         </Trigger>
                     </Style.Triggers>
+                </Style>
+            </ComboBox.Style>
+            <ComboBox.ItemContainerStyle>
+                <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 </Style>
             </ComboBox.ItemContainerStyle>
         </ComboBox>

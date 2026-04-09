@@ -6,28 +6,66 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using YukkuriMovieMaker.Commons;
 
 namespace GradientMap.ViewModels;
 
 public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposable
 {
+    private sealed class DelegateCommand : ICommand
+    {
+        private readonly Action<object?> _execute;
+        private readonly Func<object?, bool>? _canExecute;
+
+        public DelegateCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
+        {
+            ArgumentNullException.ThrowIfNull(execute);
+            _execute = execute;
+            _canExecute = canExecute;
+        }
+
+        public event EventHandler? CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
+
+        public void RaiseCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
+
+        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
+
+        public void Execute(object? parameter)
+        {
+            if (CanExecute(parameter))
+            {
+                _execute(parameter);
+            }
+        }
+    }
+
     private readonly ObservableCollection<GradientColorStopViewModel> _stops = [];
     private LinearGradientBrush _gradientBrush;
     private bool _serializationSuspended;
     private bool _disposed;
+
+    private readonly DelegateCommand _deleteStopCommand;
+    private readonly DelegateCommand _exportAsGrdCommand;
+    private readonly DelegateCommand _exportAsPngCommand;
 
     public GradientEditorViewModel()
     {
         Stops = new ReadOnlyObservableCollection<GradientColorStopViewModel>(_stops);
         _gradientBrush = BuildDefaultBrush();
 
-        DeleteStopCommand = new ActionCommand(
-            p => p is GradientColorStopViewModel vm && CanDeleteStop(vm),
-            p => { if (p is GradientColorStopViewModel vm) RemoveStop(vm); });
+        _deleteStopCommand = new DelegateCommand(
+            p => { if (p is GradientColorStopViewModel vm) RemoveStop(vm); },
+            p => p is GradientColorStopViewModel vm && CanDeleteStop(vm));
 
-        ExportAsGrdCommand = new ActionCommand(_ => CanExport, _ => ExportAsGrd());
-        ExportAsPngCommand = new ActionCommand(_ => CanExport, _ => ExportAsPng());
+        _exportAsGrdCommand = new DelegateCommand(_ => ExportAsGrd(), _ => CanExport);
+        _exportAsPngCommand = new DelegateCommand(_ => ExportAsPng(), _ => CanExport);
+
+        DeleteStopCommand = _deleteStopCommand;
+        ExportAsGrdCommand = _exportAsGrdCommand;
+        ExportAsPngCommand = _exportAsPngCommand;
     }
 
     public ReadOnlyObservableCollection<GradientColorStopViewModel> Stops { get; }
@@ -66,6 +104,9 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
 
         RefreshBrush();
         Raise(nameof(CanExport));
+        _deleteStopCommand.RaiseCanExecuteChanged();
+        _exportAsGrdCommand.RaiseCanExecuteChanged();
+        _exportAsPngCommand.RaiseCanExecuteChanged();
     }
 
     public void AddStopAt(float position, Color color)
@@ -81,6 +122,9 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
         RefreshBrush();
         Raise(nameof(CanExport));
         Commit();
+        _deleteStopCommand.RaiseCanExecuteChanged();
+        _exportAsGrdCommand.RaiseCanExecuteChanged();
+        _exportAsPngCommand.RaiseCanExecuteChanged();
     }
 
     public void RemoveStop(GradientColorStopViewModel stop)
@@ -91,6 +135,9 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
         RefreshBrush();
         Raise(nameof(CanExport));
         Commit();
+        _deleteStopCommand.RaiseCanExecuteChanged();
+        _exportAsGrdCommand.RaiseCanExecuteChanged();
+        _exportAsPngCommand.RaiseCanExecuteChanged();
     }
 
     public void SuspendSerialization() => _serializationSuspended = true;
@@ -108,6 +155,9 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
         }
         RefreshBrush();
         Commit();
+        _deleteStopCommand.RaiseCanExecuteChanged();
+        _exportAsGrdCommand.RaiseCanExecuteChanged();
+        _exportAsPngCommand.RaiseCanExecuteChanged();
     }
 
     public Color SampleColorAt(float position)
