@@ -6,9 +6,12 @@ using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Controls;
 using YukkuriMovieMaker.Exo;
 using YukkuriMovieMaker.Player.Video;
+using YukkuriMovieMaker.Plugin;
 using YukkuriMovieMaker.Plugin.Effects;
 
 namespace GradientMap.Effect;
+
+[PluginDetails(AuthorName = "routersys")]
 
 [VideoEffect(nameof(Texts.EffectName), [VideoEffectCategories.Filtering], ["gradient map", "グラデーションマップ", "渐变映射", "漸層對應", "그라디언트 맵"], IsAviUtlSupported = false, ResourceType = typeof(Texts))]
 public sealed class GradientMapEffect : VideoEffectBase

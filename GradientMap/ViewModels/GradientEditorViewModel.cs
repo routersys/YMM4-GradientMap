@@ -188,7 +188,7 @@ public sealed class GradientEditorViewModel : INotifyPropertyChanged, IDisposabl
             wpfStops[i] = new GradientStop(sorted[i].Color, sorted[i].Position);
 
         var brush = new LinearGradientBrush(
-            [..wpfStops],
+            [.. wpfStops],
             new Point(0, 0),
             new Point(1, 0));
         brush.Freeze();
