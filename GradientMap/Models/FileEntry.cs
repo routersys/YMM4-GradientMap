@@ -37,7 +37,7 @@ public sealed class FileEntry : INotifyPropertyChanged
         get;
         set
         {
-            if (field == value) return;
+            if (IsNone || field == value) return;
             field = value;
             Notify();
         }

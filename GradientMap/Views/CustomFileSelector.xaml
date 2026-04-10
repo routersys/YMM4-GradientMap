@@ -131,7 +131,7 @@
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding IsNone}" Value="True"/>
-                                <Condition Binding="{Binding DataContext.HasFavorites, RelativeSource={RelativeSource AncestorType=ComboBox}}" Value="True"/>
+                                <Condition Binding="{Binding DataContext.HasFavorites, ElementName=root}" Value="True"/>
                             </MultiDataTrigger.Conditions>
                             <MultiDataTrigger.Setters>
                                 <Setter Property="Visibility" Value="Collapsed"/>
