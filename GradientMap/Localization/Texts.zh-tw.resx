@@ -133,4 +133,6 @@
 <data name="ExportAsPngName" xml:space="preserve"><value>匯出為PNG</value></data>
 <data name="ExportGrdFilterName" xml:space="preserve"><value>漸層檔案 (*.grd)|*.grd</value></data>
 <data name="ExportPngFilterName" xml:space="preserve"><value>PNG 影像 (*.png)|*.png</value></data>
+<data name="UpdateAvailableTitle" xml:space="preserve"><value>有可用更新</value></data>
+<data name="UpdateAvailableMessage" xml:space="preserve"><value>GradientMap 有新版本 {0} 可用 (目前: {1})</value></data>
 </root>

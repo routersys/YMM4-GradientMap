@@ -40,6 +40,8 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
         }
     }
 
+    private readonly IUpdateChecker _updateChecker;
+
     public GradientMapEffectProcessor(
         IGraphicsDevicesAndContext devices,
         GradientMapEffect item)
@@ -48,6 +50,7 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
         _item = item;
         _registry = GradientMapServices.Container.Resolve<IResourceRegistry>();
         _textureFactory = GradientMapServices.Container.Resolve<IGradientTextureFactory>();
+        _updateChecker = GradientMapServices.Container.Resolve<IUpdateChecker>();
 
         InitializeEffect();
     }
@@ -156,6 +159,9 @@ public sealed class GradientMapEffectProcessor : IVideoEffectProcessor
             else if (!string.IsNullOrWhiteSpace(path))
                 RefreshGradientBitmapFromFile(path, gradientIndex, json);
         }
+
+        if (_isFirst)
+            _ = _updateChecker.CheckAndNotifyAsync();
 
         if (_isFirst || _opacity != opacity)
             _effect.Opacity = opacity;

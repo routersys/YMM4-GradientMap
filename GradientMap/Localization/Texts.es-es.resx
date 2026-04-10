@@ -133,4 +133,6 @@
 <data name="ExportAsPngName" xml:space="preserve"><value>Exportar como PNG</value></data>
 <data name="ExportGrdFilterName" xml:space="preserve"><value>Archivos de degradado (*.grd)|*.grd</value></data>
 <data name="ExportPngFilterName" xml:space="preserve"><value>Imagen PNG (*.png)|*.png</value></data>
+<data name="UpdateAvailableTitle" xml:space="preserve"><value>Actualización disponible</value></data>
+<data name="UpdateAvailableMessage" xml:space="preserve"><value>Hay una nueva versión {0} de GradientMap disponible (Actual: {1})</value></data>
 </root>
