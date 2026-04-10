@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:GradientMap.Views"
              xmlns:conv="clr-namespace:GradientMap.Converters"
+             xmlns:loc="clr-namespace:GradientMap.Localization"
              Name="root">
     <UserControl.Resources>
         <conv:BoolToStarConverter x:Key="BoolToStar"/>
@@ -11,10 +12,28 @@
         <conv:NullToVisibilityConverter x:Key="NullToVis"/>
 
         <DataTemplate x:Key="SelectedTemplate">
-            <TextBlock Text="{Binding FileName}"
-                       VerticalAlignment="Center"
+            <TextBlock VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis"
-                       Margin="2,0"/>
+                       Margin="2,0">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="{Binding FileName}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsNone}" Value="True">
+                                <Setter Property="Text" Value="{x:Static loc:Texts.NoFileSelected}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </DataTemplate>
+
+        <DataTemplate x:Key="NoneEntryTemplate">
+            <Grid Height="52">
+                <TextBlock Text="{x:Static loc:Texts.NoFileSelected}"
+                           VerticalAlignment="Center"
+                           Margin="8,0"/>
+            </Grid>
         </DataTemplate>
 
         <DataTemplate x:Key="DropdownTemplate">
@@ -77,7 +96,8 @@
 
         <conv:FileEntryTemplateSelector x:Key="TemplateSelector"
                                          SelectedTemplate="{StaticResource SelectedTemplate}"
-                                         DropdownTemplate="{StaticResource DropdownTemplate}"/>
+                                         DropdownTemplate="{StaticResource DropdownTemplate}"
+                                         NoneEntryTemplate="{StaticResource NoneEntryTemplate}"/>
     </UserControl.Resources>
 
     <Grid Height="26">
@@ -107,6 +127,17 @@
                 <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
                     <Setter Property="Padding" Value="0"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsNone}" Value="True"/>
+                                <Condition Binding="{Binding DataContext.HasFavorites, RelativeSource={RelativeSource AncestorType=ComboBox}}" Value="True"/>
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.Setters>
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </MultiDataTrigger.Setters>
+                        </MultiDataTrigger>
+                    </Style.Triggers>
                 </Style>
             </ComboBox.ItemContainerStyle>
         </ComboBox>

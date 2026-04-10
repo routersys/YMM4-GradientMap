@@ -30,6 +30,7 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
         ToggleFavoriteCommand = new ActionCommand(_ => true, OnToggleFavorite);
         BrowseCommand = new ActionCommand(_ => true, _ => Browse());
         RefreshFiles();
+        SyncSelection();
     }
 
     public ObservableCollection<FileEntry> Files { get; } = [];
@@ -43,7 +44,18 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
             field = value;
             OnPropertyChanged();
             if (!_suppressSync && value is not null)
-                FilePath = value.FilePath;
+                FilePath = value.IsNone ? string.Empty : value.FilePath;
+        }
+    }
+
+    public bool HasFavorites
+    {
+        get;
+        private set
+        {
+            if (field == value) return;
+            field = value;
+            OnPropertyChanged();
         }
     }
 
@@ -84,23 +96,31 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
         _suppressSync = true;
         try
         {
+            if (string.IsNullOrWhiteSpace(FilePath))
+            {
+                SelectedFile = FileEntry.None;
+                return;
+            }
+
             FileEntry? match = null;
             for (var i = 0; i < Files.Count; i++)
             {
+                if (Files[i].IsNone) continue;
                 if (string.Equals(Files[i].FilePath, FilePath, StringComparison.OrdinalIgnoreCase))
                 {
                     match = Files[i];
                     break;
                 }
             }
-            SelectedFile = match;
 
-            if (SelectedFile is null && !string.IsNullOrWhiteSpace(FilePath) && File.Exists(FilePath))
+            if (match is null && File.Exists(FilePath))
             {
                 var entry = new FileEntry(FilePath);
                 Files.Add(entry);
-                SelectedFile = entry;
+                match = entry;
             }
+
+            SelectedFile = match;
         }
         finally
         {
@@ -111,15 +131,23 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
     private void RefreshFiles()
     {
         Files.Clear();
+
+        if (string.IsNullOrWhiteSpace(FilePath))
+            Files.Add(FileEntry.None);
+
         var settings = GradientMapSettings.Instance;
         var favoritePaths = settings.FavoritePaths;
+        var favoriteCount = 0;
 
         for (var i = 0; i < favoritePaths.Count; i++)
         {
             var p = favoritePaths[i];
             if (!File.Exists(p) || !IsSupported(p)) continue;
             Files.Add(new FileEntry(p) { IsFavorite = true });
+            favoriteCount++;
         }
+
+        HasFavorites = favoriteCount > 0;
 
         if (!string.IsNullOrWhiteSpace(_currentDirectory) && Directory.Exists(_currentDirectory))
         {
@@ -134,6 +162,7 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
                 var alreadyExists = false;
                 for (var j = 0; j < Files.Count; j++)
                 {
+                    if (Files[j].IsNone) continue;
                     if (string.Equals(Files[j].FilePath, path, StringComparison.OrdinalIgnoreCase))
                     {
                         alreadyExists = true;
@@ -169,7 +198,7 @@ public sealed class FileSelectorViewModel : INotifyPropertyChanged
 
     private void OnToggleFavorite(object? parameter)
     {
-        if (parameter is not FileEntry entry) return;
+        if (parameter is not FileEntry entry || entry.IsNone) return;
         entry.IsFavorite = !entry.IsFavorite;
 
         var settings = GradientMapSettings.Instance;

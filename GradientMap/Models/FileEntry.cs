@@ -8,17 +8,29 @@ namespace GradientMap.Models;
 
 public sealed class FileEntry : INotifyPropertyChanged
 {
+    public static readonly FileEntry None = new(string.Empty, isNone: true);
+
     public FileEntry(string filePath)
     {
         FilePath = filePath;
         FileName = Path.GetFileName(filePath);
         Extension = Path.GetExtension(filePath).ToLowerInvariant();
+        IsNone = false;
+    }
+
+    private FileEntry(string filePath, bool isNone)
+    {
+        FilePath = filePath;
+        FileName = string.Empty;
+        Extension = string.Empty;
+        IsNone = isNone;
     }
 
     public string FilePath { get; }
     public string FileName { get; }
     public string Extension { get; }
     public bool IsGrd => Extension == ".grd";
+    public bool IsNone { get; }
 
     public bool IsFavorite
     {
@@ -66,8 +78,9 @@ public sealed class FileEntry : INotifyPropertyChanged
 
     public override bool Equals(object? obj) =>
         obj is FileEntry other &&
+        IsNone == other.IsNone &&
         string.Equals(FilePath, other.FilePath, StringComparison.OrdinalIgnoreCase);
 
     public override int GetHashCode() =>
-        StringComparer.OrdinalIgnoreCase.GetHashCode(FilePath);
+        IsNone ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(FilePath);
 }

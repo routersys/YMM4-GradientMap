@@ -135,4 +135,5 @@
 <data name="ExportPngFilterName" xml:space="preserve"><value>PNG图像 (*.png)|*.png</value></data>
 <data name="UpdateAvailableTitle" xml:space="preserve"><value>有可用更新</value></data>
 <data name="UpdateAvailableMessage" xml:space="preserve"><value>GradientMap 有新版本 {0} 可用 (当前: {1})</value></data>
+<data name="NoFileSelected" xml:space="preserve"><value>未选择</value></data>
 </root>

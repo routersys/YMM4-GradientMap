@@ -9,10 +9,12 @@ namespace GradientMap.Converters
     {
         public DataTemplate? SelectedTemplate { get; set; }
         public DataTemplate? DropdownTemplate { get; set; }
+        public DataTemplate? NoneEntryTemplate { get; set; }
 
         public override DataTemplate? SelectTemplate(object? item, DependencyObject container)
         {
-            if (item is not FileEntry) return base.SelectTemplate(item, container);
+            if (item is not FileEntry entry) return base.SelectTemplate(item, container);
+            if (entry.IsNone && IsInDropdown(container)) return NoneEntryTemplate;
             return IsInDropdown(container) ? DropdownTemplate : SelectedTemplate;
         }
 

@@ -135,4 +135,5 @@
 <data name="ExportPngFilterName" xml:space="preserve"><value>Imagen PNG (*.png)|*.png</value></data>
 <data name="UpdateAvailableTitle" xml:space="preserve"><value>Actualización disponible</value></data>
 <data name="UpdateAvailableMessage" xml:space="preserve"><value>Hay una nueva versión {0} de GradientMap disponible (Actual: {1})</value></data>
+<data name="NoFileSelected" xml:space="preserve"><value>No seleccionado</value></data>
 </root>

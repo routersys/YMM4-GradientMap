@@ -135,4 +135,5 @@
 <data name="ExportPngFilterName" xml:space="preserve"><value>PNG イメージ (*.png)|*.png</value></data>
 <data name="UpdateAvailableTitle" xml:space="preserve"><value>アップデートあり</value></data>
 <data name="UpdateAvailableMessage" xml:space="preserve"><value>GradientMap の新しいバージョン {0} が利用可能です (現在: {1})</value></data>
+<data name="NoFileSelected" xml:space="preserve"><value>未選択</value></data>
 </root>

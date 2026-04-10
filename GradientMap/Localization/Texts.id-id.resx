@@ -135,4 +135,5 @@
 <data name="ExportPngFilterName" xml:space="preserve"><value>Gambar PNG (*.png)|*.png</value></data>
 <data name="UpdateAvailableTitle" xml:space="preserve"><value>Pembaruan Tersedia</value></data>
 <data name="UpdateAvailableMessage" xml:space="preserve"><value>Versi baru {0} dari GradientMap tersedia (Saat ini: {1})</value></data>
+<data name="NoFileSelected" xml:space="preserve"><value>Tidak Dipilih</value></data>
 </root>

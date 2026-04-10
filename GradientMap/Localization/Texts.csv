@@ -75,3 +75,4 @@ ExportGrdFilterName,,グラデーションファイル (*.grd)|*.grd,Gradient Fi
 ExportPngFilterName,,PNG イメージ (*.png)|*.png,PNG Image (*.png)|*.png,PNG图像 (*.png)|*.png,PNG 影像 (*.png)|*.png,PNG 이미지 (*.png)|*.png,Imagen PNG (*.png)|*.png,صورة PNG (*.png)|*.png,Gambar PNG (*.png)|*.png
 UpdateAvailableTitle,,アップデートあり,Update Available,有可用更新,有可用更新,업데이트 있음,Actualización disponible,تحديث متوفر,Pembaruan Tersedia
 UpdateAvailableMessage,,GradientMap の新しいバージョン {0} が利用可能です (現在: {1}),A new version {0} of GradientMap is available (Current: {1}),GradientMap 有新版本 {0} 可用 (当前: {1}),GradientMap 有新版本 {0} 可用 (目前: {1}),GradientMap 의 새 버전 {0} 이(가) 있습니다 (현재: {1}),Hay una nueva versión {0} de GradientMap disponible (Actual: {1}),يتوفر إصدار جديد {0} من GradientMap (الحالي: {1}),Versi baru {0} dari GradientMap tersedia (Saat ini: {1})
+NoFileSelected,,未選択,Not Selected,未选择,未選擇,선택 안 함,No seleccionado,غير محدد,Tidak Dipilih
