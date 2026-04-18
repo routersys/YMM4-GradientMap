@@ -1,4 +1,4 @@
-﻿using GradientMap.ViewModels;
+using GradientMap.ViewModels;
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,6 +11,17 @@ namespace GradientMap.Views;
 
 public partial class GradientEditor : UserControl, IPropertyEditorControl, IDisposable
 {
+    private static readonly SolidColorBrush MarkerIdleBrush;
+    private static readonly SolidColorBrush MarkerActiveBrush;
+
+    static GradientEditor()
+    {
+        MarkerIdleBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xAA, 0xAA, 0xAA));
+        MarkerIdleBrush.Freeze();
+        MarkerActiveBrush = new SolidColorBrush(Color.FromArgb(0xC0, 0x00, 0xBF, 0xFF));
+        MarkerActiveBrush.Freeze();
+    }
+
     public static readonly DependencyProperty GradientJsonProperty =
         DependencyProperty.Register(
             nameof(GradientJson),
@@ -136,6 +147,8 @@ public partial class GradientEditor : UserControl, IPropertyEditorControl, IDisp
             border.MouseLeftButtonDown -= OnMarkerMouseLeftButtonDown;
             border.MouseMove -= OnMarkerMouseMove;
             border.MouseLeftButtonUp -= OnMarkerMouseLeftButtonUp;
+            border.MouseEnter -= OnMarkerMouseEnter;
+            border.MouseLeave -= OnMarkerMouseLeave;
         }
         _markerToStop.Clear();
         GradientCanvas.Children.Clear();
@@ -151,6 +164,8 @@ public partial class GradientEditor : UserControl, IPropertyEditorControl, IDisp
             marker.MouseLeftButtonDown += OnMarkerMouseLeftButtonDown;
             marker.MouseMove += OnMarkerMouseMove;
             marker.MouseLeftButtonUp += OnMarkerMouseLeftButtonUp;
+            marker.MouseEnter += OnMarkerMouseEnter;
+            marker.MouseLeave += OnMarkerMouseLeave;
             _markerToStop[marker] = stop;
             GradientCanvas.Children.Add(marker);
             PositionMarker(marker, stop.Position, canvasWidth);
@@ -161,11 +176,11 @@ public partial class GradientEditor : UserControl, IPropertyEditorControl, IDisp
     {
         return new Border
         {
-            Width = 12,
+            Width = 14,
             Height = height > 0 ? height : 22,
-            Background = new SolidColorBrush(Color.FromArgb(64, 0, 191, 255)),
+            Background = Brushes.Transparent,
             BorderThickness = new Thickness(1.5),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(192, 0, 191, 255)),
+            BorderBrush = MarkerIdleBrush,
             Cursor = Cursors.SizeWE,
         };
     }
@@ -175,6 +190,18 @@ public partial class GradientEditor : UserControl, IPropertyEditorControl, IDisp
         if (canvasWidth > 0)
             Canvas.SetLeft(marker, position * (canvasWidth - marker.Width));
         Canvas.SetTop(marker, 0);
+    }
+
+    private void OnMarkerMouseEnter(object sender, MouseEventArgs e)
+    {
+        if (sender is Border marker && !_isDragging)
+            marker.BorderBrush = MarkerActiveBrush;
+    }
+
+    private void OnMarkerMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (sender is Border marker && _draggingMarker != marker)
+            marker.BorderBrush = MarkerIdleBrush;
     }
 
     private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
@@ -222,6 +249,8 @@ public partial class GradientEditor : UserControl, IPropertyEditorControl, IDisp
         _dragStartMouseX = e.GetPosition(GradientCanvas).X;
         _dragStartStopPosition = stop.Position;
 
+        marker.BorderBrush = MarkerActiveBrush;
+
         _viewModel.SuspendSerialization();
         marker.CaptureMouse();
         e.Handled = true;
@@ -250,9 +279,14 @@ public partial class GradientEditor : UserControl, IPropertyEditorControl, IDisp
         if (!_isDragging || _draggingMarker is null) return;
 
         _draggingMarker.ReleaseMouseCapture();
+
+        var released = _draggingMarker;
         _isDragging = false;
         _draggingMarker = null;
         _draggingStop = null;
+
+        if (!released.IsMouseOver)
+            released.BorderBrush = MarkerIdleBrush;
 
         _viewModel?.ResumeAndFinalizeDrag();
         e.Handled = true;
@@ -276,6 +310,8 @@ public partial class GradientEditor : UserControl, IPropertyEditorControl, IDisp
             border.MouseLeftButtonDown -= OnMarkerMouseLeftButtonDown;
             border.MouseMove -= OnMarkerMouseMove;
             border.MouseLeftButtonUp -= OnMarkerMouseLeftButtonUp;
+            border.MouseEnter -= OnMarkerMouseEnter;
+            border.MouseLeave -= OnMarkerMouseLeave;
         }
         _markerToStop.Clear();
 
